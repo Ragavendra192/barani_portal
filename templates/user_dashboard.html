@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="section-card-header" style="margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+    <div>
+        <span class="welcome-badge">OPERATIONAL WORKSPACE</span>
+        <h1 style="font-size: 26px; font-weight: 800; color: var(--text-primary); margin-top: 2px;">My Authorized Applications</h1>
+        <p style="font-size: 14px; color: var(--text-secondary); margin-top: 2px;">Launch authorized enterprise software modules assigned to your user account.</p>
+    </div>
+</div>
+
+{% if apps %}
+<div class="app-launcher-grid" style="margin-bottom: 32px;">
+    {% for app in apps %}
+    <a href="/launch/{{ app[0] if app[0] is defined else app.id }}" onclick="if('{{ app[2] if app[2] is defined else app.app_url }}'.startsWith('http')) { event.preventDefault(); launchPersistentApp('{{ app[1] if app[1] is defined else app.app_name }}', '{{ app[2] if app[2] is defined else app.app_url }}', {{ app[0] if app[0] is defined else app.id }}); }" class="app-launcher-card">
+        {% if (app[3] if app[3] is defined else app.app_image) %}
+            <img src="{{ url_for('static', filename='images/' ~ (app[3] if app[3] is defined else app.app_image)) }}" class="app-launcher-icon" alt="{{ app[1] if app[1] is defined else app.app_name }}">
+        {% else %}
+            <div class="app-launcher-icon" style="background: var(--primary-light); color: var(--primary-color); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px;">
+                🚀
+            </div>
+        {% endif %}
+        <h3 class="app-launcher-title">{{ app[1] if app[1] is defined else app.app_name }}</h3>
+        <span class="btn-primary" style="margin-top: 16px; padding: 6px 16px; font-size: 13px; border-radius: 9999px;">Launch Module ➔</span>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="section-card" style="text-align: center; padding: 60px 24px; margin-bottom: 32px;">
+    <div style="font-size: 54px; margin-bottom: 16px;">📱</div>
+    <h3 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin-bottom: 8px;">No Applications Assigned</h3>
+    <p style="font-size: 14px; color: var(--text-secondary); max-width: 480px; margin: 0 auto;">
+        You currently do not have access to any external applications. Please contact your System Administrator to assign module permissions to your account.
+    </p>
+</div>
+{% endif %}
+
+<!-- ===== ANNOUNCEMENTS TICKER BAR FOR USERS ===== -->
+<div class="announcement-ticker-bar">
+    <div class="ticker-badges-group">
+        <span class="ticker-badge announcements">📌 ANNOUNCEMENTS</span>
+        <span class="ticker-badge notice">COMPANY BROADCAST</span>
+    </div>
+    <div class="ticker-content-marquee">
+        {% if notices %}
+            {% for n in notices %}
+                <strong>{{ n.title }}</strong>: {{ n.description[:90] }}... &nbsp;&nbsp;|&nbsp;&nbsp; 
+            {% endfor %}
+        {% else %}
+            No new announcements at this time. Stay tuned for company updates and policy circulars.
+        {% endif %}
+    </div>
+    <div class="ticker-controls-group">
+        <a href="/announcements/general" class="btn-view-all-notices">View Notices ➔</a>
+    </div>
+</div>
+
+{% endblock %}

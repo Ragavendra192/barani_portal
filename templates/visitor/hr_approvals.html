@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="hr-dashboard-wrapper">
+    <div class="dashboard-header">
+        <div class="header-left">
+            <span class="badge-role">HR DEPARTMENT</span>
+            <h1>Visitor Approvals</h1>
+            <p class="subtitle">Review and manage incoming visitor requests.</p>
+        </div>
+        <div class="header-right">
+            <a href="/visitor/hr/reports" class="btn-secondary" style="padding: 10px 20px;">View Reports</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div style="background: #eef2ff; border: 1px solid #c7d2fe; color: #4338ca; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; font-weight: 500;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="section-card attendance-section">
+        <div class="section-header">
+            <h2>Pending Visitor Requests</h2>
+        </div>
+
+        <div class="table-container">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Visitor Name</th>
+                        <th>Company</th>
+                        <th>To Meet</th>
+                        <th>Department</th>
+                        <th>Purpose</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td class="semi-bold">{{ req.VisitorName }}</td>
+                        <td>{{ req.CompanyName or '-' }}</td>
+                        <td>{{ req.EmployeeToMeet }}</td>
+                        <td><span class="dept-badge">{{ req.Department or '-' }}</span></td>
+                        <td>{{ req.PurposeOfVisit }}</td>
+                        <td>{{ req.VisitDate.strftime('%Y-%m-%d') if req.VisitDate else '-' }}</td>
+                        <td>
+                            <!-- Fake modals for native feeling: Inline forms with confirm JS instead of Bootstrap Modals -->
+                            <form action="/visitor/hr/approve" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to approve {{ req.VisitorName }}? A pass number will be generated.');">
+                                <input type="hidden" name="request_id" value="{{ req.RequestID }}">
+                                <button type="submit" class="btn-primary" style="background: #10b981;">Approve</button>
+                            </form>
+
+                            <button type="button" class="btn-primary" style="background: #ef4444; margin-left: 5px;" onclick="showRejectForm('{{ req.RequestID }}')">Reject</button>
+                            
+                            <div id="reject-form-{{ req.RequestID }}" style="display: none; margin-top: 10px; background: #fee2e2; padding: 15px; border-radius: 8px;">
+                                <form action="/visitor/hr/reject" method="POST">
+                                    <input type="hidden" name="request_id" value="{{ req.RequestID }}">
+                                    <p style="font-size: 12px; font-weight: 600; margin-bottom: 5px;">Rejecting {{ req.VisitorName }}</p>
+                                    <textarea name="remarks" placeholder="Enter remarks..." style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #fca5a5; font-size: 12px; margin-bottom: 10px;" required></textarea>
+                                    <button type="submit" class="btn-primary" style="background: #ef4444; padding: 6px 12px;">Confirm Rejection</button>
+                                    <button type="button" class="btn-secondary" style="padding: 6px 12px;" onclick="hideRejectForm('{{ req.RequestID }}')">Cancel</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="no-records">No pending visitor requests.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function showRejectForm(id) {
+    document.getElementById('reject-form-' + id).style.display = 'block';
+}
+function hideRejectForm(id) {
+    document.getElementById('reject-form-' + id).style.display = 'none';
+}
+</script>
+
+<style>
+/* Using HR Dashboard Styles */
+:root {
+    --primary-color: #6366f1;
+    --primary-hover: #4f46e5;
+    --secondary-color: #f3f4f6;
+    --secondary-hover: #e5e7eb;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --border-color: #e5e7eb;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.hr-dashboard-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 15px;
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+}
+
+.badge-role {
+    display: inline-block;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    margin-bottom: 8px;
+    letter-spacing: 0.8px;
+}
+
+.dashboard-header h1 {
+    font-size: 28px;
+    color: var(--text-primary);
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.dashboard-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.section-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(0,0,0,0.02);
+    margin-bottom: 30px;
+}
+
+.section-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+}
+
+.btn-primary {
+    padding: 8px 16px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+
+.btn-secondary {
+    padding: 8px 16px;
+    background: var(--secondary-color);
+    color: var(--text-secondary);
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.premium-table th, .premium-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.premium-table th {
+    background: #f8fafc;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.premium-table tr:hover {
+    background: #fafafc;
+}
+
+.semi-bold { font-weight: 600; }
+.dept-badge { background: #eff6ff; color: #1e40af; padding: 3px 8px; border-radius: 6px; font-weight: 600; font-size: 11px; }
+.no-records { text-align: center; color: #9ca3af; padding: 30px !important; }
+</style>
+
+{% endblock %}

@@ -1,0 +1,2037 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    /* Disable Browser Up/Down Spin Buttons on Number Inputs */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+
+    .content {
+        padding-top: 5px !important;
+    }
+
+    .accounts-header-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        margin-bottom: 12px;
+        border-bottom: 2px solid #003366;
+    }
+
+    /* COMPACT CASHIER SECONDARY TAB NAVIGATION */
+    .cashier-tab-btn {
+        background: #ffffff;
+        color: #003366;
+        border: 1px solid #cbd5e1;
+        padding: 6px 16px;
+        font-size: 11px;
+        font-weight: 800;
+        cursor: pointer;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.15s ease;
+    }
+
+    .cashier-tab-btn:hover {
+        background: #f1f5f9;
+        border-color: #003366;
+    }
+
+    .cashier-tab-btn.active {
+        background: #003366;
+        color: #ffffff;
+        border-color: #001122;
+        box-shadow: 0 2px 6px rgba(0, 51, 102, 0.2);
+    }
+
+    .vch-table-container {
+        background: var(--bg-card, #ffffff);
+        border: 1px solid var(--border-color, #cbd5e1);
+        border-radius: 6px;
+        overflow-x: auto;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .vch-list-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .vch-list-table th {
+        background: #003366;
+        color: #ffffff;
+        font-weight: 800;
+        padding: 10px 12px;
+        border-bottom: 2px solid #002244;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+    }
+
+    .vch-list-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+        color: var(--text-primary, #1e293b);
+    }
+
+    .vch-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 800;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .vch-badge-draft {
+        background: #e2e8f0;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+    }
+
+    .vch-badge-submitted {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #93c5fd;
+    }
+
+    .vch-badge-approved {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #86efac;
+    }
+
+    .vch-badge-rejected {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+    }
+
+    .vch-badge-sentback {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .vch-badge-settled {
+        background: #f3e8ff;
+        color: #6b21a8;
+        border: 1px solid #d8b4fe;
+    }
+
+    /* HIGH CONTRAST INLINE AUDIT WORKSPACE CARD (Soft Ice Blue Fill Inside) */
+    .inline-voucher-card {
+        background: #71c8f1 !important;
+        border: 2px solid #003366;
+        border-top: 5px solid #003366;
+        border-radius: 8px;
+        padding: 22px 26px;
+        margin-top: 10px;
+        margin-bottom: 28px;
+        box-shadow: 0 10px 30px rgba(0, 51, 102, 0.12);
+        box-sizing: border-box;
+    }
+
+    /* HIGH CONTRAST METADATA CONTAINER (Slate Blue Fill) */
+    .audit-metadata-box {
+        background: #e2e8f0 !important;
+        border: 1px solid #cbd5e1;
+        border-left: 5px solid #003366;
+        padding: 14px 18px;
+        margin-bottom: 16px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+
+    .audit-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        align-items: center;
+    }
+
+    .audit-meta-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+    }
+
+    .audit-meta-val {
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    /* HIGH CONTRAST EXPENSE TABLE */
+    .vch-bill-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+
+    .vch-bill-table th {
+        background: #003366;
+        color: #ffffff;
+        border: 1px solid #002244;
+        padding: 9px 12px;
+        font-weight: 800;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .vch-bill-table td {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1;
+        padding: 9px 12px;
+        vertical-align: middle;
+    }
+
+    /* HIGH CONTRAST FINANCIAL SETTLEMENT BANNER */
+    .audit-settlement-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        background: #dbeafe !important;
+        border: 2px solid #3b82f6;
+        padding: 12px 20px;
+        margin-top: 14px;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        flex-wrap: wrap;
+    }
+
+    .settle-pay-company {
+        color: #15803d;
+        font-weight: 900;
+    }
+
+    .settle-pay-employee {
+        color: #b91c1c;
+        font-weight: 900;
+    }
+
+    .settle-neutral {
+        color: #003366;
+        font-weight: 900;
+    }
+
+    /* HIGH CONTRAST APPROVAL CONTROLS CONSOLE */
+    .accounts-action-panel {
+        border: 2px solid #003366;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-top: 22px;
+        box-shadow: 0 4px 14px rgba(0, 51, 102, 0.08);
+    }
+
+    .action-panel-header {
+        background: #003366;
+        color: #ffffff;
+        padding: 10px 18px;
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .action-panel-body {
+        background: #f8fafc;
+        padding: 16px 20px;
+    }
+
+    .btn-acc-hod-approve {
+        background: #003366;
+        color: #ffffff;
+        border: 1px solid #001122;
+        padding: 8px 18px;
+        font-weight: 800;
+        font-size: 12px;
+        cursor: pointer;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0, 51, 102, 0.2);
+        transition: background 0.2s ease;
+    }
+
+    .btn-acc-hod-approve:hover {
+        background: #002244;
+    }
+
+    .btn-acc-approve {
+        background: #15803d;
+        color: #ffffff;
+        border: 1px solid #14532d;
+        padding: 8px 18px;
+        font-weight: 800;
+        font-size: 12px;
+        cursor: pointer;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(21, 128, 61, 0.2);
+        transition: background 0.2s ease;
+    }
+
+    .btn-acc-approve:hover {
+        background: #166534;
+    }
+
+    .btn-acc-sendback {
+        background: #d97706;
+        color: #ffffff;
+        border: 1px solid #b45309;
+        padding: 8px 18px;
+        font-weight: 800;
+        font-size: 12px;
+        cursor: pointer;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2);
+        transition: background 0.2s ease;
+    }
+
+    .btn-acc-sendback:hover {
+        background: #b45309;
+    }
+
+    .btn-acc-reject {
+        background: #b91c1c;
+        color: #ffffff;
+        border: 1px solid #7f1d1d;
+        padding: 8px 18px;
+        font-weight: 800;
+        font-size: 12px;
+        cursor: pointer;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(185, 28, 28, 0.2);
+        transition: background 0.2s ease;
+    }
+
+    .btn-acc-reject:hover {
+        background: #991b1b;
+    }
+
+    .btn-acc-settle {
+        background: #7e22ce;
+        color: #ffffff;
+        border: 1px solid #581c87;
+        padding: 8px 18px;
+        font-weight: 800;
+        font-size: 12px;
+        cursor: pointer;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(126, 34, 206, 0.2);
+        transition: background 0.2s ease;
+    }
+
+    .btn-acc-settle:hover {
+        background: #6b21a8;
+    }
+
+    /* CONFIRMATION POPUP MODAL DIALOG */
+    .modal-overlay-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 34, 68, 0.65);
+        backdrop-filter: blur(4px);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        box-sizing: border-box;
+    }
+
+    .modal-dialog-card {
+        background: #ffffff;
+        border: 2px solid #003366;
+        border-top: 6px solid #003366;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 520px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        animation: modalPopIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes modalPopIn {
+        0% {
+            transform: scale(0.92);
+            opacity: 0;
+        }
+
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .modal-header-bar {
+        background: #003366;
+        color: #ffffff;
+        padding: 12px 18px;
+        font-size: 14px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .modal-body-content {
+        padding: 18px 22px;
+        font-size: 13px;
+        color: #1e293b;
+    }
+
+    .modal-summary-box {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-left: 4px solid #003366;
+        padding: 10px 14px;
+        margin: 12px 0;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+
+    .modal-footer-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        background: #f1f5f9;
+        padding: 12px 18px;
+        border-top: 1px solid #cbd5e1;
+    }
+
+    .btn-modal-cancel {
+        background: #ffffff;
+        color: #475569;
+        border: 1.5px solid #cbd5e1;
+        padding: 7px 16px;
+        font-size: 12px;
+        font-weight: 700;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .btn-modal-action-confirm {
+        color: #ffffff;
+        border: none;
+        padding: 8px 22px;
+        font-size: 12px;
+        font-weight: 800;
+        border-radius: 4px;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    @media print {
+        body * {
+            visibility: hidden !important;
+        }
+
+        header, nav, .top-navbar, .accounts-header-bar, .voucher-top-nav-bar,
+        .accounts-action-panel, button, #mainListingWorkspace,
+        #cashierVouchersSec, #cashierLedgerSec, #cashierDebitSec, #cashierCreditSec {
+            display: none !important;
+        }
+
+        #accountsInlineContainer, #accountsInlineContainer * {
+            visibility: visible !important;
+        }
+
+        #accountsInlineContainer {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 20px !important;
+            border: 2px solid #000000 !important;
+            background: #ffffff !important;
+            box-shadow: none !important;
+            color: #000000 !important;
+        }
+
+        .inline-voucher-card, .vch-bill-table, .audit-metadata-box, .audit-settlement-banner {
+            background: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        .vch-bill-table th {
+            background: #f1f5f9 !important;
+            color: #000000 !important;
+            border: 1px solid #000000 !important;
+        }
+
+        .vch-bill-table td {
+            border: 1px solid #000000 !important;
+            color: #000000 !important;
+        }
+    }
+</style>
+
+<!-- MAIN WORKSPACE HEADER BAR -->
+<div class="accounts-header-bar">
+    <div>
+        <h1 style="font-size: 20px; font-weight: 900; color: #003366; margin: 0; letter-spacing: 0.5px;">ACCOUNTS TEAM
+            WORKSPACE</h1>
+    </div>
+    <div>
+        <a href="/expenses?mode=personal"
+            style="font-size: 12px; font-weight: 800; background: #ffffff; color: #003366; border: 2px solid #003366; padding: 6px 14px; text-decoration: none; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.06);">
+            MY PERSONAL EXPENSES
+        </a>
+    </div>
+</div>
+
+{% if request.args.get('error') and not request.args.get('view') %}
+<div
+    style="background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 12px 18px; border-radius: 6px; font-weight: 800; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(239,68,68,0.1);">
+    <span>⚠️ {{ request.args.get('error') }}</span>
+    <button type="button" onclick="this.parentElement.remove()"
+        style="background: transparent; border: none; color: #991b1b; font-size: 16px; font-weight: 900; cursor: pointer;">✕</button>
+</div>
+{% endif %}
+
+<!-- MAIN LISTING WORKSPACE (HIDDEN WHEN VIEWING AN INDIVIDUAL VOUCHER) -->
+<div id="mainListingWorkspace">
+{% if is_accounts_user %}
+<!-- CASHIER COMPACT SECONDARY TAB NAVIGATION -->
+<div
+    style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px; background: #e2e8f0; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; flex-wrap: wrap;">
+    <button type="button" class="cashier-tab-btn active" id="tabBtnLedger"
+        onclick="switchCashierTab('ledger')">LEDGER</button>
+    <button type="button" class="cashier-tab-btn" id="tabBtnCredit" onclick="switchCashierTab('credit')">CREDIT
+        ENTRY</button>
+    <button type="button" class="cashier-tab-btn" id="tabBtnDebit" onclick="switchCashierTab('debit')">DEBITS</button>
+    <button type="button" class="cashier-tab-btn" id="tabBtnVouchers" onclick="switchCashierTab('vouchers')">EXPENSE
+        VOUCHERS</button>
+</div>
+
+<!-- COMPACT CASH BALANCE SUMMARY HEADER (SINGLE HORIZONTAL ROW) -->
+<div
+    style="background: #003366; color: #ffffff; padding: 10px 18px; border-radius: 6px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 15px; font-size: 12px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,51,102,0.12); flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: #94a3b8; text-transform: uppercase; font-size: 11px; font-weight: 800;">OPENING
+            BALANCE:</span>
+        <strong id="hdrOpeningBal" style="font-size: 15px; color: #ffffff;">{{ cashier_summary.opening_balance|inr
+            }}</strong>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: #86efac; text-transform: uppercase; font-size: 11px; font-weight: 800;">CREDIT:</span>
+        <strong id="hdrTodayCredit" style="font-size: 15px; color: #86efac;">{{ cashier_summary.today_credit|inr
+            }}</strong>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: #fca5a5; text-transform: uppercase; font-size: 11px; font-weight: 800;">DEBIT:</span>
+        <strong id="hdrTodayDebit" style="font-size: 15px; color: #fca5a5;">{{ cashier_summary.today_debit|inr
+            }}</strong>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: #bfdbfe; text-transform: uppercase; font-size: 11px; font-weight: 800;">CLOSING
+            BALANCE:</span>
+        <strong id="hdrClosingBal" style="font-size: 16px; color: #ffffff; font-weight: 900;">{{
+            cashier_summary.closing_balance|inr }}</strong>
+    </div>
+</div>
+
+<!-- 1. CASHIER CREDIT ENTRY FORM SECTION -->
+<div id="cashierCreditSec"
+    style="display: none; background: #ffffff; border: 2px solid #15803d; border-radius: 6px; padding: 18px 22px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(21,128,61,0.08);">
+    <div
+        style="font-size: 14px; font-weight: 900; color: #15803d; text-transform: uppercase; border-bottom: 2px solid #15803d; padding-bottom: 8px; margin-bottom: 14px;">
+        CASH ENTRY SECTION
+    </div>
+
+    <form action="/cashier/credit/save" method="POST" id="crdCreditForm">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 14px;">
+            <div>
+                <label
+                    style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">DATE:</label>
+                <input type="date" name="date" class="vch-input-field" value="{{ today_date }}"
+                    style="width: 100%; font-weight: 700; margin-top: 4px;" required>
+            </div>
+
+            <div>
+                <label style="font-size: 11px; font-weight: 800; color: #003366; text-transform: uppercase;">CREDIT
+                    SOURCE:</label>
+                <select name="credit_source" id="crdCreditSource" class="vch-input-field"
+                    onchange="onCreditSourceChange(this.value)"
+                    style="width: 100%; font-weight: 800; color: #003366; margin-top: 4px;" required>
+                    <option value="employee_advance_return">Employee Advance Return</option>
+                    <option value="bank_cash_withdrawal">Bank Cash Withdrawal</option>
+                    <option value="management">Management / MD</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div>
+                <label style="font-size: 11px; font-weight: 800; color: #15803d; text-transform: uppercase;">AMOUNT
+                    (₹):</label>
+                <input type="number" step="0.01" name="amount" id="crdAmountInput" class="vch-input-field"
+                    placeholder="0.00" onfocus="this.select()"
+                    style="width: 100%; font-weight: 900; font-size: 14px; color: #15803d; text-align: right; margin-top: 4px;"
+                    required>
+            </div>
+        </div>
+
+        <!-- CONDITIONAL FIELD GROUP 1: EMPLOYEE ADVANCE RETURN -->
+        <div id="crdGrpEmpAdvance"
+            style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 14px;">
+            <div>
+                <label style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">REFERENCE /
+                    VOUCHER NO.:</label>
+                <select name="reference" id="crdVoucherSelect" class="vch-input-field"
+                    onchange="onCreditVoucherChange(this)" style="width: 100%; font-weight: 700; margin-top: 4px;">
+                    <option value="">-- Select Voucher No --</option>
+                    {% for v in vouchers %}
+                    {% if v.closing_balance > 0 %}
+                    <option value="{{ v.voucher_id }}" data-emp="{{ v.employee_name }}"
+                        data-balance="{{ v.closing_balance }}">
+                        {{ v.voucher_id }} | {{ v.employee_name }} (Return: {{ v.closing_balance|inr }})
+                    </option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">EMPLOYEE /
+                    SOURCE:</label>
+                <select name="party_name" id="crdEmployeeSelect" class="vch-input-field"
+                    style="width: 100%; font-weight: 700; margin-top: 4px;">
+                    <option value="">-- Select Employee --</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.full_name }}">{{ emp.full_name }} ({{ emp.emp_id }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- CONDITIONAL FIELD GROUP 2: BANK / MANAGEMENT / OTHER SOURCE -->
+        <div id="crdGrpGeneralSource"
+            style="display: none; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 14px;">
+            <div>
+                <label id="crdSourceLabel"
+                    style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">BANK / SOURCE
+                    NAME:</label>
+                <input type="text" name="source_name" id="crdSourceInput" class="vch-input-field"
+                    placeholder="e.g. Bank Name" style="width: 100%; font-weight: 700; margin-top: 4px;">
+            </div>
+
+            <div>
+                <label style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">REFERENCE /
+                    UTR NO (OPTIONAL):</label>
+                <input type="text" name="reference_gen" id="crdRefGenInput" class="vch-input-field"
+                    placeholder="e.g. BANK-001 / UTR998877" style="width: 100%; font-weight: 700; margin-top: 4px;">
+            </div>
+        </div>
+
+
+
+        <div style="display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn-acc-approve" style="padding: 8px 24px;">✔ SAVE CREDIT</button>
+        </div>
+    </form>
+
+    <!-- RECENT CREDIT ENTRIES TABLE -->
+    <div style="margin-top: 22px; border-top: 2px solid #cbd5e1; padding-top: 14px;">
+        <div style="font-size: 12px; font-weight: 900; color: #003366; text-transform: uppercase; margin-bottom: 10px;">
+            RECENT CREDIT ENTRIES
+        </div>
+
+        <div class="vch-table-container">
+            <table class="vch-list-table">
+                <thead>
+                    <tr>
+                        <th style="width: 90px;">Date</th>
+                        <th>Credit Source</th>
+                        <th>Employee / Source</th>
+                        <th style="width: 120px;">Reference</th>
+                        <th>Particulars</th>
+                        <th style="text-align: right; width: 130px; color: #86efac;">Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if recent_credit_entries %}
+                    {% for cr in recent_credit_entries %}
+                    <tr>
+                        <td style="font-weight: 700; color: #475569;">{{ cr.date }}</td>
+                        <td style="font-weight: 800; color: #003366;">{{ cr.source_label }}</td>
+                        <td style="font-weight: 700;">{{ cr.source_name }}</td>
+                        <td style="font-weight: 800; color: #003366;">{{ cr.reference }}</td>
+                        <td style="font-weight: 600;">{{ cr.particulars }}</td>
+                        <td style="text-align: right; font-weight: 900; color: #15803d;">{{ cr.amount|inr }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">No recent credit
+                            entries recorded.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 2. CASHIER DEBIT TRANSACTIONS SECTION (AUTOMATED SETTLEMENT RECORDS VIEW) -->
+<div id="cashierDebitSec" style="display: none; margin-top: 10px;">
+    <!-- READ-ONLY DEBIT TRANSACTIONS TABLE -->
+    <div class="vch-table-container">
+        <table class="vch-bill-table" style="font-size: 11px;">
+            <thead>
+                <tr>
+                    <th style="width: 40px; text-align: center;">S.NO</th>
+                    <th style="width: 90px; text-align: center;">DATE</th>
+                    <th style="width: 170px;">PARTICULARS / TYPE</th>
+                    <th>EMPLOYEE / PAYEE</th>
+                    <th style="width: 140px;">VOUCHER NO</th>
+                    <th style="width: 120px; text-align: right;">AMOUNT (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if recent_debit_entries %}
+                {% for dr in recent_debit_entries %}
+                <tr>
+                    <td style="text-align: center; font-weight: 800;">{{ loop.index }}</td>
+                    <td style="text-align: center; font-weight: 700;">{{ dr.date }}</td>
+                    <td style="font-weight: 700; color: #003366;">{{ dr.particulars }}</td>
+                    <td style="font-weight: 800; color: #0f172a;">{{ dr.party_name }}</td>
+                    <td>
+                        <strong style="color: #003366;">{{ dr.voucher_id }}</strong>
+                    </td>
+                    <td style="text-align: right; font-weight: 900; color: #b91c1c;">₹ {{ dr.amount|inr }}</td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #94a3b8; font-style: italic; padding: 18px;">
+                        No automatic debit transactions generated from voucher settlements yet.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 3. CASHIER LEDGER & TODAY'S CASH POSITION SECTION -->
+<div id="cashierLedgerSec" style="display: block;">
+    <!-- DATE FILTER BAR -->
+    <div
+        style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 16px; margin-bottom: 14px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="font-size: 11px; font-weight: 800; color: #003366; text-transform: uppercase;">FROM:</span>
+            <input type="date" id="ldgFromDate" class="vch-input-field" value="{{ today_date }}"
+                style="width: 130px; font-weight: 700;">
+
+            <span style="font-size: 11px; font-weight: 800; color: #003366; text-transform: uppercase;">TO:</span>
+            <input type="date" id="ldgToDate" class="vch-input-field" value="{{ today_date }}"
+                style="width: 130px; font-weight: 700;">
+
+            <button type="button" onclick="fetchCashierLedger()"
+                style="background: #003366; color: #ffffff; border: none; padding: 6px 14px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 4px;">
+                APPLY FILTER
+            </button>
+            <button type="button" onclick="setLedgerToday()"
+                style="background: #f1f5f9; color: #003366; border: 1px solid #94a3b8; padding: 6px 12px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 4px;">
+                TODAY
+            </button>
+        </div>
+
+        <div style="font-size: 11px; font-weight: 800; color: #475569;">
+            STATEMENT PERIOD: <span id="ldgPeriodLabel" style="color: #003366; font-weight: 900;">TODAY</span>
+        </div>
+    </div>
+
+    <!-- TODAY'S CASH POSITION BOX -->
+    <div
+        style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 5px solid #003366; padding: 12px 18px; margin-bottom: 14px; border-radius: 6px;">
+        <div style="font-size: 11px; font-weight: 800; color: #003366; text-transform: uppercase; margin-bottom: 6px;">
+            TODAY'S CASH POSITION</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; font-size: 12px;">
+            <div>Opening Balance: <strong id="ldgOpBal" style="font-size: 13px;">₹0.00</strong></div>
+            <div>Today's Credit: <strong id="ldgTdCredit" style="font-size: 13px; color: #15803d;">₹0.00</strong></div>
+            <div>Today's Debit: <strong id="ldgTdDebit" style="font-size: 13px; color: #b91c1c;">₹0.00</strong></div>
+            <div>Closing Balance: <strong id="ldgClBal"
+                    style="font-size: 14px; font-weight: 900; color: #003366;">₹0.00</strong></div>
+        </div>
+    </div>
+
+    <!-- DETAILED LEDGER TABLE -->
+    <div class="vch-table-container">
+        <table class="vch-list-table">
+            <thead>
+                <tr>
+                    <th style="width: 110px;">LEDGER NO.</th>
+                    <th style="width: 125px; text-align: center;">DATE & TIME</th>
+                    <th>PARTICULARS</th>
+                    <th style="width: 75px; text-align: center;">TYPE</th>
+                    <th style="width: 120px;">VOUCHER NO.</th>
+                    <th style="text-align: right; width: 110px; color: #86efac;">CREDIT (₹)</th>
+                    <th style="text-align: right; width: 110px; color: #fca5a5;">DEBIT (₹)</th>
+                    <th style="text-align: right; width: 130px;">BALANCE (₹)</th>
+                </tr>
+            </thead>
+            <tbody id="ledgerTbody">
+                <!-- Loaded dynamically -->
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- 5. ACCOUNTS VOUCHERS LIST SECTION -->
+<div id="cashierVouchersSec" style="display: none; margin-top: 10px;">
+    <!-- SEARCH & FILTER BAR -->
+    <div
+        style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 14px; margin-bottom: 14px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <input type="text" id="adminSearchInput" onkeyup="filterAdminTable()"
+                placeholder="Filter by Employee, Voucher No..."
+                style="padding: 6px 10px; border: 1px solid #94a3b8; font-size: 12px; width: 260px; border-radius: 4px; outline: none;">
+
+            <select id="adminStatusFilter" onchange="filterAdminTable()"
+                style="padding: 6px 10px; border: 1px solid #94a3b8; font-size: 12px; font-weight: 700; color: #003366; border-radius: 4px; outline: none;">
+                <option value="ALL">All Statuses</option>
+                <option value="SUBMITTED">Submitted (HOD Review)</option>
+                <option value="HOD_APPROVED">HOD Approved (Accounts Review)</option>
+                <option value="APPROVED">Approved by Accounts</option>
+                <option value="SENT_BACK">Sent Back</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="SETTLED">Settled</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="vch-table-container">
+        {% if vouchers %}
+        <table class="vch-list-table" id="adminVoucherTable">
+            <thead>
+                <tr>
+                    <th>Voucher No</th>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th style="text-align: right;">Total Amount</th>
+                    <th style="text-align: center;">Status</th>
+                    <th style="text-align: center;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vouchers %}
+                <tr class="vch-admin-row" data-status="{{ v.status }}">
+                    <td style="font-weight: 800; color: #003366;">{{ v.voucher_id }}</td>
+                    <td style="font-weight: 700;">{{ v.employee_name }} <small style="color: #64748b;">({{ v.emp_id
+                            }})</small></td>
+                    <td style="font-weight: 600;">{{ v.department }}</td>
+                    <td style="font-weight: 600;">{{ v.voucher_type }}</td>
+                    <td style="font-weight: 600;">{{ v.date }}</td>
+                    <td style="text-align: right; font-weight: 800; color: #003366;">{{ v.total_expenses|inr }}</td>
+                    <td style="text-align: center;">
+                        {% if v.status == 'DRAFT' %}
+                        <span class="vch-badge vch-badge-draft">DRAFT</span>
+                        {% elif v.status == 'SUBMITTED' %}
+                        <span class="vch-badge vch-badge-submitted">SUBMITTED (HOD REVIEW)</span>
+                        {% elif v.status == 'HOD_APPROVED' %}
+                        <span class="vch-badge vch-badge-submitted">HOD APPROVED</span>
+                        {% elif v.status == 'APPROVED' %}
+                        <span class="vch-badge vch-badge-approved">APPROVED BY ACCOUNTS</span>
+                        {% elif v.status == 'REJECTED' %}
+                        <span class="vch-badge vch-badge-rejected">REJECTED</span>
+                        {% elif v.status == 'SENT_BACK' %}
+                        <span class="vch-badge vch-badge-sentback">SENT BACK</span>
+                        {% elif v.status == 'SETTLED' or v.status == 'CLOSED' %}
+                        <span class="vch-badge vch-badge-settled">SETTLED</span>
+                        {% else %}
+                        <span class="vch-badge vch-badge-draft">{{ v.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        <button type="button" onclick="openAccountsInlineVoucher('{{ v.trip_id }}')"
+                            style="background: #003366; color: #ffffff; border: none; padding: 5px 14px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            VIEW
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align: center; padding: 40px; color: var(--text-muted, #64748b); font-size: 13px;">
+            No employee voucher claims found.
+        </div>
+        {% endif %}
+    </div>
+</div>
+</div>
+
+<!-- 4. HIGH CONTRAST INLINE AUDIT VOUCHER CONTAINER (EXPENSE VOUCHER INSPECTION) -->
+<div id="accountsInlineContainer" class="inline-voucher-card" style="display: none;">
+    <!-- TOP NAVIGATION & PRINT ACTION BAR BEFORE PHYSICAL VOUCHER (HIDDEN WHEN PRINTING) -->
+    <div class="voucher-top-nav-bar" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid #cbd5e1;">
+        <button type="button" onclick="closeAccountsInlineVoucher()" style="background: #003366; color: #ffffff; border: none; padding: 7px 18px; font-size: 12px; font-weight: 800; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,51,102,0.15);">
+            ← BACK TO {% if is_accounts_user %}APPROVALS{% else %}EXPENSES{% endif %}
+        </button>
+
+        {% if is_accounts_user %}
+        <button type="button" onclick="printVoucherDocument()" style="background: #15803d; color: #ffffff; border: none; padding: 7px 20px; font-size: 12px; font-weight: 800; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 6px rgba(21,128,61,0.2);">
+            🖨 PRINT VOUCHER
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- HEADER BRAND BAR -->
+    <div
+        style="display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #003366; padding-bottom: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <img src="{{ url_for('static', filename='images/BHIPL logo.png') }}" alt="BHIPL Logo"
+                style="height: 38px; width: auto; object-fit: contain;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="vch-badge vch-badge-submitted" id="accStatusBadge">SUBMITTED</span>
+        </div>
+    </div>
+
+    <!-- METADATA INFORMATION BOX -->
+    <div class="audit-metadata-box">
+        <div class="audit-meta-grid">
+            <div><span class="audit-meta-label">Voucher No:</span> <strong id="accVchNo"
+                    style="color: #003366; font-size: 13px;">-</strong></div>
+            <div><span class="audit-meta-label">Date:</span> <strong id="accDate" class="audit-meta-val">-</strong>
+            </div>
+            <div><span class="audit-meta-label">Employee:</span> <strong id="accEmployee"
+                    class="audit-meta-val">-</strong></div>
+            <div><span class="audit-meta-label">Emp ID:</span> <strong id="accEmpId" class="audit-meta-val">-</strong>
+            </div>
+        </div>
+        <div class="audit-meta-grid" style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed #cbd5e1;">
+            <div><span class="audit-meta-label">Type:</span> <strong id="accVoucherType"
+                    style="color: #003366; font-weight: 800;">-</strong></div>
+            <div><span class="audit-meta-label">Department:</span> <strong id="accDepartment"
+                    class="audit-meta-val">-</strong></div>
+            <div style="grid-column: span 2;"><span class="audit-meta-label">HOD Approval:</span> <strong
+                    id="accHodApprovedAt" style="color: #15803d; font-size: 12px;">-</strong></div>
+        </div>
+    </div>
+
+    <!-- TRIP ADVANCE BREAKDOWN SECTION -->
+    <div id="accAdvSection"
+        style="display: none; background: rgba(0, 51, 102, 0.05); border: 1px solid #94a3b8; padding: 10px 16px; margin-bottom: 16px; font-size: 11px; border-radius: 6px;">
+        <div style="font-weight: 800; color: #003366; text-transform: uppercase; margin-bottom: 6px;">ADVANCE FINANCIAL
+            BREAKDOWN</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+            <div>Opening Adv: <strong id="accOpeningAdv" style="font-size: 13px;">₹0.00</strong></div>
+            <div>New Adv: <strong id="accNewAdv" style="font-size: 13px; color: #003366;">₹0.00</strong></div>
+            <div>Additional Adv: <strong id="accAddAdv" style="font-size: 13px; color: #15803d;">₹0.00</strong></div>
+            <div>Total Avail: <strong id="accTotalAvailAdv"
+                    style="font-weight: 900; font-size: 14px; color: #003366;">₹0.00</strong></div>
+        </div>
+    </div>
+
+    <!-- EXPENSE ITEMS TABLE -->
+    <div style="border: 2px solid #003366; border-radius: 6px 6px 0 0; overflow: hidden;">
+        <table class="vch-bill-table">
+            <thead>
+                <tr id="accTableHeaderRow">
+                    <th style="width: 50px; text-align: center;">S.NO</th>
+                    <th id="accCol2Header">PRODUCT / PARTICULARS</th>
+                    <th id="accCol3Header" style="width: 80px; text-align: center;">QTY</th>
+                    <th id="accCol4Header" style="width: 170px; text-align: right;">AMOUNT (₹)</th>
+                </tr>
+            </thead>
+            <tbody id="accItemsTbody">
+                <!-- Loaded dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- TOTAL EXPENSE FOOTER BAR -->
+    <div
+        style="display: flex; align-items: center; justify-content: flex-end; background: #f1f5f9; border: 2px solid #003366; border-top: none; padding: 10px 18px; font-size: 13px; border-radius: 0 0 6px 6px; margin-bottom: 14px;">
+        <strong style="text-transform: uppercase; color: #0f172a; margin-right: 14px;">TOTAL EXPENSE:</strong>
+        <strong id="accTotalExpense" style="font-size: 18px; font-weight: 900; color: #003366;">₹0.00</strong>
+    </div>
+
+    <!-- FINANCIAL SETTLEMENT SUMMARY BAR (SINGLE HORIZONTAL ROW) -->
+    <div class="audit-settlement-banner">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">TOTAL
+                EXPENSE:</span>
+            <strong id="accTotalExpenseSummary"
+                style="font-size: 15px; font-weight: 900; color: #003366;">₹0.00</strong>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">BALANCE:</span>
+            <strong id="accBalance" style="font-size: 16px; font-weight: 900; color: #0f172a;">₹0.00</strong>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="accStatusLabel" style="font-size: 13px; font-weight: 900;">FULLY SETTLED</span>
+            <span id="accSubLabel" style="font-size: 11px; color: #334155; font-weight: 700;">(Fully Settled:
+                ₹0.00)</span>
+        </div>
+    </div>
+
+    <!-- COMPACT INLINE EXPENSE SETTLEMENT WORKFLOW CONTAINER -->
+    <div id="vchSettlementSection"
+        style="display: none; background: #ffffff; border: 2px solid #003366; border-radius: 6px; padding: 14px 18px; margin-top: 16px; margin-bottom: 16px;">
+        <div
+            style="font-size: 13px; font-weight: 900; color: #003366; text-transform: uppercase; border-bottom: 1.5px solid #003366; padding-bottom: 6px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+            <span>SETTLEMENT</span>
+            <span id="stlStatusBadge" class="vch-badge">PENDING</span>
+        </div>
+
+        <div
+            style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 12px; margin-bottom: 10px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px;">
+            <div>Advance / Amount Given: <strong id="stlAdvAmt" style="font-size: 13px; color: #003366;">₹0.00</strong>
+            </div>
+            <div>Total Expense: <strong id="stlTotExp" style="font-size: 13px; color: #0f172a;">₹0.00</strong></div>
+        </div>
+
+        <!-- UNSETTLED WORKFLOW VIEW -->
+        <div id="stlUnsettledView"
+            style="display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap;">
+            <div>
+                <span id="stlDirectionHeader"
+                    style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase;">SETTLEMENT
+                    DIRECTION:</span>
+                <div id="stlDirectionText" style="font-size: 14px; font-weight: 900; color: #003366; margin-top: 2px;">
+                    EMPLOYEE → COMPANY</div>
+                <div id="stlSubText" style="font-size: 11px; color: #64748b; font-weight: 600;">Amount to Receive: ₹0.00
+                </div>
+            </div>
+
+            {% if is_accounts_user %}
+            <div>
+                <button type="button" class="btn-acc-settle" id="btnConfirmVchSettlement"
+                    onclick="triggerAdminConfirmModal('SETTLE')" style="padding: 9px 22px; font-weight: 900;">
+                    ✔ CONFIRM SETTLEMENT
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ALREADY SETTLED VIEW -->
+        <div id="stlSettledView"
+            style="display: none; background: #f3e8ff; border: 1.5px solid #a855f7; padding: 10px 14px; border-radius: 4px; font-size: 12px; color: #6b21a8; font-weight: 800;">
+            <div style="font-weight: 900; color: #581c87; text-transform: uppercase;">SETTLED</div>
+            <div style="font-size: 11px; color: #7e22ce; margin-top: 2px;" id="stlSettledAuditMeta">Settled by Accounts
+                Team</div>
+            <div style="font-size: 12px; color: #6b21a8; margin-top: 4px;" id="stlSettledSummaryText">Employee returned
+                ₹0.00 to company.</div>
+        </div>
+    </div>
+
+
+
+    <!-- VISUAL APPROVAL TIMELINE WORKFLOW CARD -->
+    <div id="adminWorkflowTimelineContainer"></div>
+
+    <!-- HIGH CONTRAST APPROVAL CONTROLS CONSOLE -->
+    <div class="accounts-action-panel">
+        <div class="action-panel-header">
+            <span>APPROVAL & SETTLEMENT CONTROLS</span>
+            <span style="font-size: 11px; font-weight: 600; text-transform: none; opacity: 0.9;">Select action to
+                process voucher</span>
+        </div>
+
+        <div class="action-panel-body">
+            <!-- READ-ONLY STATUS NOTICE BANNER (WHEN ACTIONS ARE NOT APPLICABLE) -->
+            <div id="actionPanelNotice"
+                style="display: none; padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 800; border-radius: 4px;">
+            </div>
+
+            <!-- ACTION FORM CONSOLE -->
+            <form id="adminActionForm" action="" method="POST">
+                <input type="hidden" id="adminActionType" name="action" value="">
+                <input type="hidden" id="accPaymentMode" name="payment_mode" value="ONLINE">
+                <input type="hidden" id="accPaymentRef" name="payment_reference" value="">
+                <input type="hidden" id="accRemarksInput" name="remarks" value="">
+
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <!-- STAGE 1: HOD APPROVE -->
+                        <button type="button" class="btn-acc-hod-approve" id="btnHodApprove"
+                            onclick="triggerAdminConfirmModal('HOD_APPROVE')">✔ HOD APPROVE & FORWARD TO
+                            ACCOUNTS</button>
+
+                        <button type="button" class="btn-acc-reject" id="btnReject"
+                            onclick="triggerAdminConfirmModal('REJECT')">✖ REJECT</button>
+                    </div>
+
+                    <div>
+                        <button type="button" class="btn-acc-settle" id="btnMarkSettle"
+                            onclick="triggerAdminConfirmModal('SETTLE')">MARK AS SETTLED</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- APPROVAL / ACCOUNTS ACTION CONFIRMATION POPUP MODAL -->
+<div id="adminConfirmModalOverlay" class="modal-overlay-backdrop" style="display: none;">
+    <div class="modal-dialog-card" id="adminModalCard" style="max-width: 480px;">
+        <div class="modal-header-bar" id="adminModalHeaderBar">
+            <span id="adminModalTitle">Confirm Action</span>
+            <button type="button" onclick="closeAdminConfirmModal()"
+                style="background: none; border: none; color: #ffffff; font-size: 16px; font-weight: 800; cursor: pointer;">✖</button>
+        </div>
+        <div class="modal-body-content">
+            <p id="adminModalQuestion" style="font-weight: 800; margin-top: 0; font-size: 14px;">Are you sure you want to proceed?</p>
+
+            <div class="modal-summary-box">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>Voucher No:</span> <strong id="adminModalVchNo" style="color: #003366;">VCH-2026-XXXX</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>Employee:</span> <strong id="adminModalEmp">Employee Name</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>Department:</span> <strong id="adminModalDept">IT</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Total Amount:</span> <strong id="adminModalTotExp" style="color: #003366;">₹0.00</strong>
+                </div>
+            </div>
+
+            <!-- PAYMENT MODE SELECTION SECTION (SHOWN FOR SETTLEMENT ACTIONS) -->
+            <div id="modalPaymentModeGroup" style="margin-top: 14px; margin-bottom: 12px; display: none;">
+                <label style="font-size: 11px; font-weight: 800; color: #003366; text-transform: uppercase; display: block; margin-bottom: 6px;">
+                    Payment Mode <span style="color: #b91c1c;">*</span>
+                </label>
+                <div style="display: flex; gap: 10px;">
+                    <label id="lblPayModeOnline" style="flex: 1; border: 2px solid #003366; background: #f0f9ff; padding: 10px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 800; font-size: 12px; color: #003366;">
+                        <input type="radio" id="radioPayModeOnline" name="modal_payment_mode" value="ONLINE" onchange="onModalPaymentModeChange('ONLINE')" checked>
+                        Online Payment
+                    </label>
+                    <label id="lblPayModeCash" style="flex: 1; border: 2px solid #cbd5e1; background: #ffffff; padding: 10px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 800; font-size: 12px; color: #475569;">
+                        <input type="radio" id="radioPayModeCash" name="modal_payment_mode" value="CASH" onchange="onModalPaymentModeChange('CASH')">
+                        Cash Payment
+                    </label>
+                </div>
+            </div>
+
+            <!-- ONLINE PAYMENT FIELD (UTR / TRANSACTION ID) -->
+            <div id="modalOnlineGroup" style="margin-top: 10px; display: none;">
+                <label style="font-size: 11px; font-weight: 800; color: #003366; text-transform: uppercase; display: block;">
+                    Transaction ID / UTR Number <span style="color: #b91c1c;">*</span>
+                </label>
+                <input type="text" id="modalUtrInput"
+                    style="width: 100%; border: 1.5px solid #003366; padding: 8px 10px; font-size: 12px; font-weight: 700; margin-top: 4px; box-sizing: border-box; border-radius: 4px; outline: none;"
+                    placeholder="Enter Transaction ID / UTR Number (Required for Online)...">
+                <div id="modalUtrError" style="display: none; color: #b91c1c; font-size: 11px; font-weight: 800; margin-top: 4px; background: #fef2f2; border: 1px solid #fca5a5; padding: 6px 10px; border-radius: 4px;">
+                    ⚠️ Transaction ID / UTR Number is required for Online Payment.
+                </div>
+            </div>
+
+            <!-- MODAL REMARKS FIELD -->
+            <div id="modalRemarksGroup" style="margin-top: 10px;">
+                <label id="modalRemarksLabel"
+                    style="font-size: 11px; font-weight: 800; color: #003366; text-transform: uppercase;">Settlement Remarks (Optional):</label>
+                <input type="text" id="modalRemarksInput"
+                    style="width: 100%; border: 1.5px solid #94a3b8; padding: 7px 10px; font-size: 12px; margin-top: 3px; box-sizing: border-box; border-radius: 4px; outline: none;"
+                    placeholder="Enter settlement notes or remarks (optional)...">
+            </div>
+
+            <p id="adminModalHelpText" style="font-size: 11px; color: #64748b; margin-top: 10px; margin-bottom: 0;">
+                Click confirm below to execute this action.</p>
+        </div>
+        <div class="modal-footer-actions">
+            <button type="button" class="btn-modal-cancel" onclick="closeAdminConfirmModal()">CANCEL</button>
+            <button type="button" class="btn-modal-action-confirm" id="btnAdminModalConfirmSubmit"
+                onclick="executeFinalAdminAction()">YES, CONFIRM ACTION</button>
+        </div>
+    </div>
+</div>
+
+<!-- TRANSACTION INSPECTION MODAL FOR LEDGER -->
+<div id="txnInspectModalOverlay" class="modal-overlay-backdrop" style="display: none;">
+    <div class="modal-dialog-card" style="max-width: 480px;">
+        <div class="modal-header-bar">
+            <span>📜 Transaction Audit Details</span>
+            <button type="button" onclick="closeTxnInspectModal()"
+                style="background: none; border: none; color: #ffffff; font-size: 16px; font-weight: 800; cursor: pointer;">✖</button>
+        </div>
+        <div class="modal-body-content" id="txnInspectBody">
+            <!-- Loaded dynamically -->
+        </div>
+        <div class="modal-footer-actions">
+            <button type="button" class="btn-modal-cancel" onclick="closeTxnInspectModal()">CLOSE</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let isAccountsUser = {{ is_accounts_user| tojson | safe }};
+    let isHodUser = {{ is_hod_user| tojson | safe }};
+    let userRole = "{{ session.get('role', '') }}".toLowerCase();
+    let isAdminUser = (userRole === 'admin');
+    let pendingAdminAction = '';
+
+    function formatCurrency(num) {
+        return '₹' + parseFloat(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function onCreditSourceChange(srcVal) {
+        const grpEmp = document.getElementById('crdGrpEmpAdvance');
+        const grpGen = document.getElementById('crdGrpGeneralSource');
+        const lblSource = document.getElementById('crdSourceLabel');
+        const inputSource = document.getElementById('crdSourceInput');
+        const amtInput = document.getElementById('crdAmountInput');
+
+        if (srcVal === 'employee_advance_return') {
+            grpEmp.style.display = 'grid';
+            grpGen.style.display = 'none';
+        } else if (srcVal === 'bank_cash_withdrawal') {
+            grpEmp.style.display = 'none';
+            grpGen.style.display = 'grid';
+            lblSource.innerText = 'BANK / SOURCE:';
+            inputSource.placeholder = 'e.g. Bank Name';
+            inputSource.value = '';
+            amtInput.value = '';
+        } else if (srcVal === 'management') {
+            grpEmp.style.display = 'none';
+            grpGen.style.display = 'grid';
+            lblSource.innerText = 'SOURCE / PERSON:';
+            inputSource.placeholder = 'e.g. MD / Management';
+            inputSource.value = 'MD / Management';
+            amtInput.value = '';
+        } else { // other
+            grpEmp.style.display = 'none';
+            grpGen.style.display = 'grid';
+            lblSource.innerText = 'SOURCE NAME:';
+            inputSource.placeholder = 'e.g. Other Source Name';
+            inputSource.value = '';
+            amtInput.value = '';
+        }
+    }
+
+    function onCreditVoucherChange(selectEl) {
+        const selectedOpt = selectEl.options[selectEl.selectedIndex];
+        if (!selectedOpt || !selectedOpt.value) return;
+
+        const empName = selectedOpt.getAttribute('data-emp');
+        const bal = parseFloat(selectedOpt.getAttribute('data-balance')) || 0.0;
+
+        if (empName) {
+            const empSelect = document.getElementById('crdEmployeeSelect');
+            if (empSelect) empSelect.value = empName;
+        }
+
+        const amtInput = document.getElementById('crdAmountInput');
+
+        if (bal > 0) {
+            if (amtInput) amtInput.value = bal.toFixed(2);
+        }
+    }
+
+    function onDebitTypeChange(typeVal) {
+        const grpInt = document.getElementById('dbtGrpInternal');
+        const grpExt = document.getElementById('dbtGrpExternal');
+        const empSelect = document.getElementById('dbtIntEmployeeSelect');
+        const purposeInput = document.getElementById('dbtIntPurposeInput');
+        const payeeInput = document.getElementById('dbtExtPayeeInput');
+        const amtInt = document.getElementById('dbtIntAmountInput');
+        const amtExt = document.getElementById('dbtExtAmountInput');
+
+        if (typeVal === 'external') {
+            if (grpInt) grpInt.style.display = 'none';
+            if (grpExt) grpExt.style.display = 'block';
+            if (empSelect) empSelect.value = '';
+            if (purposeInput) purposeInput.value = '';
+            if (amtInt && amtExt && amtInt.value) amtExt.value = amtInt.value;
+        } else { // internal
+            if (grpInt) grpInt.style.display = 'block';
+            if (grpExt) grpExt.style.display = 'none';
+            if (payeeInput) payeeInput.value = '';
+            if (amtInt && amtExt && amtExt.value) amtInt.value = amtExt.value;
+        }
+    }
+
+    function switchCashierTab(tabName) {
+        const secLedger = document.getElementById('cashierLedgerSec');
+        const secCredit = document.getElementById('cashierCreditSec');
+        const secDebit = document.getElementById('cashierDebitSec');
+        const secVouchers = document.getElementById('cashierVouchersSec');
+
+        const btnLdg = document.getElementById('tabBtnLedger');
+        const btnCrd = document.getElementById('tabBtnCredit');
+        const btnDbt = document.getElementById('tabBtnDebit');
+        const btnVch = document.getElementById('tabBtnVouchers');
+
+        if (btnLdg) btnLdg.classList.remove('active');
+        if (btnCrd) btnCrd.classList.remove('active');
+        if (btnDbt) btnDbt.classList.remove('active');
+        if (btnVch) btnVch.classList.remove('active');
+
+        if (secLedger) secLedger.style.display = 'none';
+        if (secCredit) secCredit.style.display = 'none';
+        if (secDebit) secDebit.style.display = 'none';
+        if (secVouchers) secVouchers.style.display = 'none';
+
+        if (tabName === 'credit') {
+            if (secCredit) secCredit.style.display = 'block';
+            if (btnCrd) btnCrd.classList.add('active');
+        } else if (tabName === 'debit') {
+            if (secDebit) secDebit.style.display = 'block';
+            if (btnDbt) btnDbt.classList.add('active');
+        } else if (tabName === 'vouchers') {
+            if (secVouchers) secVouchers.style.display = 'block';
+            if (btnVch) btnVch.classList.add('active');
+        } else {
+            // Default LEDGER
+            if (secLedger) secLedger.style.display = 'block';
+            if (btnLdg) btnLdg.classList.add('active');
+            fetchCashierLedger();
+        }
+    }
+
+    function setLedgerToday() {
+        const today = "{{ today_date }}";
+        document.getElementById('ldgFromDate').value = today;
+        document.getElementById('ldgToDate').value = today;
+        fetchCashierLedger();
+    }
+
+    function fetchCashierLedger() {
+        const fromDate = document.getElementById('ldgFromDate').value;
+        const toDate = document.getElementById('ldgToDate').value;
+
+        document.getElementById('ldgPeriodLabel').innerText = (fromDate === toDate) ? fromDate : (fromDate + ' TO ' + toDate);
+
+        fetch('/cashier/ledger?from_date=' + fromDate + '&to_date=' + toDate)
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // Update Today's Cash Position numbers
+                if (data.summary) {
+                    document.getElementById('hdrOpeningBal').innerText = formatCurrency(data.summary.opening_balance);
+                    document.getElementById('hdrTodayCredit').innerText = formatCurrency(data.summary.today_credit);
+                    document.getElementById('hdrTodayDebit').innerText = formatCurrency(data.summary.today_debit);
+                    document.getElementById('hdrClosingBal').innerText = formatCurrency(data.summary.closing_balance);
+
+                    document.getElementById('ldgOpBal').innerText = formatCurrency(data.summary.opening_balance);
+                    document.getElementById('ldgTdCredit').innerText = formatCurrency(data.summary.today_credit);
+                    document.getElementById('ldgTdDebit').innerText = formatCurrency(data.summary.today_debit);
+                    document.getElementById('ldgClBal').innerText = formatCurrency(data.summary.closing_balance);
+                }
+
+                const tbody = document.getElementById('ledgerTbody');
+                tbody.innerHTML = '';
+
+                if (data.transactions && data.transactions.length > 0) {
+                    data.transactions.forEach(t => {
+                        const tr = document.createElement('tr');
+                        tr.style.cursor = 'pointer';
+                        tr.onclick = function () { inspectTransaction(t.txn_id); };
+
+                        const crText = t.credit > 0 ? formatCurrency(t.credit) : '—';
+                        const dbText = t.debit > 0 ? formatCurrency(t.debit) : '—';
+                        const typeBadge = t.type === 'CREDIT'
+                            ? '<span style="color: #15803d; font-weight: 800;">CREDIT</span>'
+                            : '<span style="color: #b91c1c; font-weight: 800;">DEBIT</span>';
+
+                        const dtHtml = (t.date && t.time)
+                            ? `<div style="font-weight: 800; color: #0f172a; font-size: 12px;">${t.date}</div><div style="font-size: 11px; font-weight: 700; color: #64748b; margin-top: 2px;">${t.time}</div>`
+                            : `<div style="font-weight: 800; color: #0f172a; font-size: 12px;">${t.date_time || t.date}</div>`;
+
+                        tr.innerHTML = `
+                        <td style="font-weight: 800; color: #003366;">${t.ledger_no || ('LED-' + t.txn_id)}</td>
+                        <td style="text-align: center;">${dtHtml}</td>
+                        <td style="font-weight: 700; color: #0f172a;">${t.particulars}</td>
+                        <td style="text-align: center; font-size: 11px;">${typeBadge}</td>
+                        <td style="font-weight: 800; color: #003366;">${t.voucher_id || '—'}</td>
+                        <td style="text-align: right; font-weight: 800; color: #15803d;">${crText}</td>
+                        <td style="text-align: right; font-weight: 800; color: #b91c1c;">${dbText}</td>
+                        <td style="text-align: right; font-weight: 900; color: #003366;">${formatCurrency(t.balance)}</td>
+                    `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 30px; color: #64748b;">No ledger transactions recorded for this period.</td></tr>`;
+                }
+            })
+            .catch(err => console.error(err));
+    }
+
+    function inspectTransaction(txnId) {
+        fetch('/cashier/transaction/' + txnId)
+            .then(res => res.json())
+            .then(t => {
+                if (t.error) {
+                    alert(t.error);
+                    return;
+                }
+
+                const body = document.getElementById('txnInspectBody');
+                body.innerHTML = `
+                <div class="modal-summary-box">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Ledger No:</span> <strong style="color: #003366; font-size: 13px;">${t.ledger_no || '—'}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Transaction ID:</span> <strong style="color: #64748b;">#${t.txn_id}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Type:</span> <strong style="color: ${t.type === 'CREDIT' ? '#15803d' : '#b91c1c'};">${t.type}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Date & Time:</span> <strong style="color: #0f172a;">${t.date_time || t.created_at || t.date}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Voucher Reference:</span> <strong style="color: #003366;">${t.voucher_id}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Party / Payee / Source:</span> <strong>${t.party_name}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Particulars:</span> <strong>${t.particulars}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Amount:</span> <strong style="font-size: 15px; color: ${t.type === 'CREDIT' ? '#15803d' : '#b91c1c'};">${formatCurrency(t.amount)}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Payment Ref / UTR:</span> <strong>${t.payment_reference}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <span>Recorded By:</span> <strong>${t.created_by_name}</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Recorded Date/Time:</span> <strong>${t.created_at}</strong>
+                    </div>
+                </div>
+            `;
+
+                document.getElementById('txnInspectModalOverlay').style.display = 'flex';
+            })
+            .catch(err => console.error(err));
+    }
+
+    function closeTxnInspectModal() {
+        document.getElementById('txnInspectModalOverlay').style.display = 'none';
+    }
+
+    function updateActionButtons(status, isCreator = false, tripId = '') {
+        const btnHod = document.getElementById('btnHodApprove');
+        const btnAcc = document.getElementById('btnAccountsApprove');
+        const btnReject = document.getElementById('btnReject');
+        const btnSettle = document.getElementById('btnMarkSettle');
+        const actionForm = document.getElementById('adminActionForm');
+        const actionNotice = document.getElementById('actionPanelNotice');
+
+        // Default hide all buttons
+        if (btnHod) {
+            btnHod.style.display = 'none';
+            btnHod.innerText = '✔ HOD APPROVE & FORWARD TO ACCOUNTS';
+            btnHod.onclick = function() { triggerAdminConfirmModal('HOD_APPROVE'); };
+        }
+        if (btnAcc) btnAcc.style.display = 'none';
+        if (btnReject) btnReject.style.display = 'none';
+        if (btnSettle) btnSettle.style.display = 'none';
+        actionNotice.style.display = 'none';
+        actionForm.style.display = 'block';
+
+        if (status === 'SUBMITTED') {
+            if (isHodUser || isAdminUser) {
+                if (btnHod) btnHod.style.display = 'inline-block';
+                if (btnReject) btnReject.style.display = 'inline-block';
+            } else {
+                actionForm.style.display = 'none';
+                actionNotice.style.display = 'block';
+                actionNotice.className = 'vch-badge vch-badge-submitted';
+                actionNotice.innerHTML = 'STATUS: SUBMITTED &nbsp;|&nbsp; ⏳ PENDING DEPARTMENT HEAD REVIEW';
+            }
+        } else if (status === 'HOD_APPROVED') {
+            if (isAccountsUser || isAdminUser) {
+                if (btnAcc) btnAcc.style.display = 'inline-block';
+                if (btnSettle) btnSettle.style.display = 'inline-block';
+                if (btnReject) btnReject.style.display = 'inline-block';
+            } else {
+                actionForm.style.display = 'none';
+                actionNotice.style.display = 'block';
+                actionNotice.className = 'vch-badge vch-badge-submitted';
+                actionNotice.innerHTML = 'STATUS: HOD APPROVED &nbsp;|&nbsp; ⏳ PENDING ACCOUNTS TEAM AUDIT & SETTLEMENT';
+            }
+        } else if (status === 'APPROVED') {
+            if (isAccountsUser || isAdminUser) {
+                if (btnSettle) btnSettle.style.display = 'inline-block';
+                if (btnReject) btnReject.style.display = 'inline-block';
+            } else {
+                actionForm.style.display = 'none';
+                actionNotice.style.display = 'block';
+                actionNotice.className = 'vch-badge vch-badge-approved';
+                actionNotice.innerHTML = 'STATUS: APPROVED BY ACCOUNTS &nbsp;|&nbsp; ⏳ PENDING PAYMENT SETTLEMENT';
+            }
+        } else if (status === 'SETTLED' || status === 'CLOSED') {
+            actionForm.style.display = 'none';
+            actionNotice.style.display = 'block';
+            actionNotice.className = 'vch-badge vch-badge-settled';
+            actionNotice.innerHTML = 'STATUS: FULLY SETTLED';
+        } else if (status === 'REJECTED') {
+            if (isCreator && tripId) {
+                actionForm.style.display = 'block';
+                if (btnHod) {
+                    btnHod.style.display = 'inline-block';
+                    btnHod.innerText = '✏️ EDIT & RESUBMIT VOUCHER';
+                    btnHod.onclick = function() { window.location.href = '/expenses?view=' + tripId; };
+                }
+                actionNotice.style.display = 'block';
+                actionNotice.className = 'vch-badge vch-badge-rejected';
+                actionNotice.innerHTML = 'STATUS: REJECTED &nbsp;|&nbsp; YOU CAN EDIT AND RESUBMIT THIS VOUCHER';
+            } else {
+                actionForm.style.display = 'none';
+                actionNotice.style.display = 'block';
+                actionNotice.className = 'vch-badge vch-badge-rejected';
+                actionNotice.innerHTML = 'STATUS: REJECTED &nbsp;|&nbsp; NO FURTHER REVIEW ACTIONS AVAILABLE';
+            }
+        } else {
+            actionForm.style.display = 'none';
+            actionNotice.style.display = 'block';
+            actionNotice.className = 'vch-badge vch-badge-draft';
+            actionNotice.innerHTML = 'STATUS: READ ONLY';
+        }
+    }
+
+    function openAccountsInlineVoucher(tripId) {
+        const container = document.getElementById('accountsInlineContainer');
+        fetch('/expenses/voucher/' + tripId + '?format=json')
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                document.getElementById('adminActionForm').action = '/admin/expenses/trip/' + data.trip_id + '/action';
+
+                document.getElementById('accVchNo').innerText = data.voucher_id;
+                document.getElementById('accDate').innerText = data.start_date;
+                document.getElementById('accEmployee').innerText = data.employee_name;
+                document.getElementById('accEmpId').innerText = data.emp_id;
+                document.getElementById('accVoucherType').innerText = data.voucher_type;
+                document.getElementById('accDepartment').innerText = data.department;
+                document.getElementById('accHodApprovedAt').innerText = data.hod_approved_at || "Not yet approved by HOD";
+
+                const badge = document.getElementById('accStatusBadge');
+                badge.innerText = (data.status === 'SUBMITTED') ? 'SUBMITTED (HOD REVIEW)' : (data.status === 'HOD_APPROVED') ? 'HOD APPROVED' : data.status;
+                badge.className = 'vch-badge';
+                if (data.status === 'SUBMITTED' || data.status === 'HOD_APPROVED') badge.classList.add('vch-badge-submitted');
+                else if (data.status === 'APPROVED') badge.classList.add('vch-badge-approved');
+                else if (data.status === 'SETTLED') badge.classList.add('vch-badge-settled');
+                else badge.classList.add('vch-badge-draft');
+
+                updateActionButtons(data.status, data.is_voucher_creator, data.trip_id);
+
+                // Render dynamic visual workflow timeline
+                if (typeof renderVoucherWorkflowTimeline === 'function') {
+                    renderVoucherWorkflowTimeline(data, 'adminWorkflowTimelineContainer');
+                }
+
+                const isTripAdv = (data.voucher_type === 'Trip Advance');
+                const col2Header = document.getElementById('accCol2Header');
+                const col3Header = document.getElementById('accCol3Header');
+
+                if (isTripAdv) {
+                    col2Header.innerText = 'VISITING PLACE';
+                    col3Header.style.display = 'none';
+                } else {
+                    col2Header.innerText = 'PRODUCT / PARTICULARS';
+                    col3Header.style.display = 'table-cell';
+                }
+
+                const advSec = document.getElementById('accAdvSection');
+                if (isTripAdv) {
+                    advSec.style.display = 'block';
+                    document.getElementById('accOpeningAdv').innerText = formatCurrency(data.opening_advance);
+                    document.getElementById('accNewAdv').innerText = formatCurrency(data.new_advance);
+                    document.getElementById('accAddAdv').innerText = formatCurrency(data.additional_advance);
+                    document.getElementById('accTotalAvailAdv').innerText = formatCurrency(data.total_available_advance);
+                } else {
+                    advSec.style.display = 'none';
+                }
+
+                const tbody = document.getElementById('accItemsTbody');
+                tbody.innerHTML = '';
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach((item, idx) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                        <td style="text-align: center; font-weight: 700;">${idx + 1}</td>
+                        <td style="font-weight: 600;">${item.particulars}</td>
+                        <td style="text-align: center; font-weight: 600; ${isTripAdv ? 'display: none;' : ''}">${item.qty}</td>
+                        <td style="text-align: right; font-weight: 800; color: #003366;">${formatCurrency(item.amount)}</td>
+                    `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                const totExp = formatCurrency(data.total_expenses);
+                document.getElementById('accTotalExpense').innerText = totExp;
+                const expSum = document.getElementById('accTotalExpenseSummary');
+                if (expSum) expSum.innerText = totExp;
+
+                document.getElementById('accBalance').innerText = formatCurrency(Math.abs(data.closing_balance));
+
+                const sLabel = document.getElementById('accStatusLabel');
+                const subLabel = document.getElementById('accSubLabel');
+                if (data.closing_balance > 0) {
+                    sLabel.innerText = "EMPLOYEE → COMPANY";
+                    sLabel.className = "settle-pay-company";
+                    subLabel.innerText = `(RETURN TO COMPANY: ${formatCurrency(data.closing_balance)})`;
+                } else if (data.closing_balance < 0) {
+                    sLabel.innerText = "COMPANY → EMPLOYEE";
+                    sLabel.className = "settle-pay-employee";
+                    subLabel.innerText = `(PAYABLE TO EMPLOYEE: ${formatCurrency(Math.abs(data.closing_balance))})`;
+                } else {
+                    sLabel.innerText = "FULLY SETTLED";
+                    sLabel.className = "settle-neutral";
+                    subLabel.innerText = `(Fully Settled: ₹0.00)`;
+                }
+
+                // SETTLEMENT WORKFLOW SECTION (Expense Voucher Only)
+                const stlSec = document.getElementById('vchSettlementSection');
+                if (data.voucher_type === 'Expense') {
+                    if (stlSec) stlSec.style.display = 'block';
+
+                    document.getElementById('stlAdvAmt').innerText = formatCurrency(data.total_available_advance);
+                    document.getElementById('stlTotExp').innerText = formatCurrency(data.total_expenses);
+
+                    const isSettled = (data.status === 'SETTLED' || data.status === 'CLOSED');
+                    const stlBadge = document.getElementById('stlStatusBadge');
+                    const stlUnsettledView = document.getElementById('stlUnsettledView');
+                    const stlSettledView = document.getElementById('stlSettledView');
+
+                    if (isSettled) {
+                        if (stlBadge) {
+                            stlBadge.innerText = 'SETTLED';
+                            stlBadge.className = 'vch-badge vch-badge-settled';
+                        }
+                        if (stlUnsettledView) stlUnsettledView.style.display = 'none';
+                        if (stlSettledView) {
+                            stlSettledView.style.display = 'block';
+                            document.getElementById('stlSettledAuditMeta').innerText = 'Settled by: ' + (data.settled_by_name || 'Accounts Team') + (data.settled_at_str ? ' | Date: ' + data.settled_at_str : '');
+
+                            if (data.closing_balance > 0) {
+                                document.getElementById('stlSettledSummaryText').innerText = 'Employee returned ' + formatCurrency(data.closing_balance) + ' to company.';
+                            } else if (data.closing_balance < 0) {
+                                document.getElementById('stlSettledSummaryText').innerText = 'Company paid ' + formatCurrency(Math.abs(data.closing_balance)) + ' to employee.';
+                            } else {
+                                document.getElementById('stlSettledSummaryText').innerText = 'Voucher is fully settled with ₹0.00 balance.';
+                            }
+                        }
+                    } else {
+                        if (stlBadge) {
+                            stlBadge.innerText = 'PENDING SETTLEMENT';
+                            stlBadge.className = 'vch-badge vch-badge-submitted';
+                        }
+                        if (stlSettledView) stlSettledView.style.display = 'none';
+                        if (stlUnsettledView) stlUnsettledView.style.display = 'flex';
+
+                        const dirText = document.getElementById('stlDirectionText');
+                        const subText = document.getElementById('stlSubText');
+
+                        if (data.closing_balance > 0) {
+                            dirText.innerText = 'EMPLOYEE → COMPANY';
+                            dirText.className = 'settle-pay-company';
+                            subText.innerText = 'Amount to Receive: ' + formatCurrency(data.closing_balance);
+                        } else if (data.closing_balance < 0) {
+                            dirText.innerText = 'COMPANY → EMPLOYEE';
+                            dirText.className = 'settle-pay-employee';
+                            subText.innerText = 'Amount to Pay: ' + formatCurrency(Math.abs(data.closing_balance));
+                        } else {
+                            dirText.innerText = 'FULLY SETTLED';
+                            dirText.className = 'settle-neutral';
+                            subText.innerText = 'Balance: ₹0.00';
+                        }
+                    }
+                } else {
+                    // Trip Advance vouchers use dedicated Trip Advance workflow
+                    if (stlSec) stlSec.style.display = 'none';
+                }
+
+                // TRIP ADVANCE SETTLEMENT WORKFLOW SECTION (Trip Advance Voucher Only)
+                const taSec = document.getElementById('tripAdvSettlementSection');
+                if (taSec) {
+                    if (data.voucher_type === 'Trip Advance') {
+                        if (stlSec) stlSec.style.display = 'none';
+                        taSec.style.display = 'block';
+
+                        const elApprovedAdv = document.getElementById('taApprovedAdv');
+                        if (elApprovedAdv) elApprovedAdv.innerText = formatCurrency(data.new_advance || data.total_available_advance || 0);
+
+                        const isAdvIssued = (data.accounting_status === 'ISSUED' || data.status === 'ADVANCE_ISSUED' || data.status === 'CLOSED');
+                        const elAccStatus = document.getElementById('taAccStatus');
+                        if (elAccStatus) {
+                            elAccStatus.innerText = isAdvIssued ? 'ADVANCE ISSUED ✓' : 'PENDING ISSUANCE';
+                            elAccStatus.style.color = isAdvIssued ? '#15803d' : '#b91c1c';
+                        }
+
+                        const taStatusBadge = document.getElementById('taStatusBadge');
+                        if (taStatusBadge) {
+                            if (data.status === 'CLOSED') {
+                                taStatusBadge.innerText = 'CLOSED';
+                                taStatusBadge.className = 'vch-badge vch-badge-settled';
+                            } else if (isAdvIssued) {
+                                taStatusBadge.innerText = 'ADVANCE ISSUED';
+                                taStatusBadge.className = 'vch-badge vch-badge-submitted';
+                            } else {
+                                taStatusBadge.innerText = 'PENDING';
+                                taStatusBadge.className = 'vch-badge vch-badge-draft';
+                            }
+                        }
+
+                        // 1. Accounts Box
+                        const taAccSubText = document.getElementById('taAccountsSubText');
+                        const btnIssueTripAdv = document.getElementById('btnIssueTripAdv');
+                        if (isAdvIssued) {
+                            if (taAccSubText) taAccSubText.innerHTML = '<span style="color: #15803d; font-weight: 800;">✓ Issued by ' + (data.advance_issued_by_name || 'Accounts Team') + (data.advance_issued_at_str ? ' (' + data.advance_issued_at_str + ')' : '') + '</span>';
+                            if (btnIssueTripAdv) {
+                                btnIssueTripAdv.disabled = true;
+                                btnIssueTripAdv.style.opacity = '0.5';
+                                btnIssueTripAdv.innerText = '✓ ADVANCE ISSUED';
+                            }
+                        } else {
+                            if (taAccSubText) taAccSubText.innerText = 'Pending Accounts Team issuance';
+                            if (btnIssueTripAdv) {
+                                btnIssueTripAdv.disabled = false;
+                                btnIssueTripAdv.style.opacity = '1';
+                                btnIssueTripAdv.innerText = 'SETTLE / ISSUE ADVANCE';
+                            }
+                        }
+
+                        // 2A. HOD Box
+                        const taHodSubText = document.getElementById('taHodSubText');
+                        const btnHodConfirmCash = document.getElementById('btnHodConfirmCash');
+                        if (data.hod_cash_confirmed) {
+                            if (taHodSubText) taHodSubText.innerHTML = '<span style="color: #15803d; font-weight: 800;">✓ Confirmed by ' + (data.hod_cash_confirmed_by_name || 'HOD') + (data.hod_cash_confirmed_at_str ? ' (' + data.hod_cash_confirmed_at_str + ')' : '') + '</span>';
+                            if (btnHodConfirmCash) {
+                                btnHodConfirmCash.disabled = true;
+                                btnHodConfirmCash.style.opacity = '0.5';
+                                btnHodConfirmCash.innerText = '✓ HOD CONFIRMED';
+                            }
+                        } else {
+                            if (taHodSubText) taHodSubText.innerText = isAdvIssued ? 'Awaiting HOD cash confirmation' : 'Advance must be issued first';
+                            if (btnHodConfirmCash) {
+                                btnHodConfirmCash.disabled = !isAdvIssued;
+                                btnHodConfirmCash.style.opacity = isAdvIssued ? '1' : '0.5';
+                            }
+                        }
+
+                        // 2B. Employee Box
+                        const taEmpSubText = document.getElementById('taEmpSubText');
+                        const btnEmpConfirmCash = document.getElementById('btnEmpConfirmCash');
+                        if (data.employee_cash_confirmed) {
+                            if (taEmpSubText) taEmpSubText.innerHTML = '<span style="color: #15803d; font-weight: 800;">✓ Received by ' + (data.employee_cash_confirmed_by_name || data.employee_name) + (data.employee_cash_confirmed_at_str ? ' (' + data.employee_cash_confirmed_at_str + ')' : '') + '</span>';
+                            if (btnEmpConfirmCash) {
+                                btnEmpConfirmCash.style.display = 'inline-block';
+                                btnEmpConfirmCash.disabled = true;
+                                btnEmpConfirmCash.style.opacity = '0.5';
+                                btnEmpConfirmCash.innerText = '✓ CASH RECEIVED';
+                            }
+                        } else {
+                            if (taEmpSubText) taEmpSubText.innerText = isAdvIssued ? 'Awaiting Employee receipt confirmation' : 'Advance must be issued first';
+                            if (btnEmpConfirmCash) {
+                                if (data.is_voucher_creator && isAdvIssued) {
+                                    btnEmpConfirmCash.style.display = 'inline-block';
+                                    btnEmpConfirmCash.disabled = false;
+                                    btnEmpConfirmCash.style.opacity = '1';
+                                    btnEmpConfirmCash.innerText = '✔ CONFIRM CASH RECEIVED';
+                                } else {
+                                    btnEmpConfirmCash.style.display = 'none';
+                                }
+                            }
+                        }
+
+                        // Overall Handover Status Text
+                        const elHandoverStatus = document.getElementById('taHandoverStatus');
+                        if (elHandoverStatus) {
+                            if (data.status === 'CLOSED' || (data.hod_cash_confirmed && data.employee_cash_confirmed)) {
+                                elHandoverStatus.innerText = 'HANDOVER COMPLETE ✓';
+                                elHandoverStatus.style.color = '#15803d';
+                            } else if (data.hod_cash_confirmed) {
+                                elHandoverStatus.innerText = 'AWAITING EMPLOYEE RECEIPT';
+                                elHandoverStatus.style.color = '#d97706';
+                            } else if (data.employee_cash_confirmed) {
+                                elHandoverStatus.innerText = 'AWAITING HOD CONFIRMATION';
+                                elHandoverStatus.style.color = '#d97706';
+                            } else if (isAdvIssued) {
+                                elHandoverStatus.innerText = 'AWAITING CASH CONFIRMATIONS';
+                                elHandoverStatus.style.color = '#003366';
+                            } else {
+                                elHandoverStatus.innerText = 'PENDING';
+                                elHandoverStatus.style.color = '#64748b';
+                            }
+                        }
+                    } else {
+                        taSec.style.display = 'none';
+                    }
+                }
+
+                const mainList = document.getElementById('mainListingWorkspace');
+                if (mainList) mainList.style.display = 'none';
+
+                container.style.display = 'block';
+
+                if (window.history && window.history.pushState) {
+                    const newUrl = window.location.pathname + '?view=' + data.trip_id;
+                    window.history.pushState({ path: newUrl }, '', newUrl);
+                }
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            })
+            .catch(err => console.error(err));
+    }
+
+    function closeAccountsInlineVoucher() {
+        const mainList = document.getElementById('mainListingWorkspace');
+        const container = document.getElementById('accountsInlineContainer');
+
+        if (container) container.style.display = 'none';
+        if (mainList) mainList.style.display = 'block';
+
+        if (window.history && window.history.pushState) {
+            window.history.pushState({ path: window.location.pathname }, '', window.location.pathname);
+        }
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function printVoucherDocument() {
+        window.print();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const viewTripId = urlParams.get('view');
+        const activeTab = urlParams.get('tab') || 'ledger';
+
+        if (viewTripId) {
+            openAccountsInlineVoucher(viewTripId);
+        } else if (document.getElementById('tabBtnLedger')) {
+            switchCashierTab(activeTab);
+        } else if (document.getElementById('cashierVouchersSec')) {
+            document.getElementById('cashierVouchersSec').style.display = 'block';
+        }
+    });
+
+    function onModalPaymentModeChange(mode) {
+        const lblOnline = document.getElementById('lblPayModeOnline');
+        const lblCash = document.getElementById('lblPayModeCash');
+        const grpOnline = document.getElementById('modalOnlineGroup');
+        const errorUtr = document.getElementById('modalUtrError');
+        const radioOnline = document.getElementById('radioPayModeOnline');
+        const radioCash = document.getElementById('radioPayModeCash');
+
+        if (errorUtr) errorUtr.style.display = 'none';
+
+        if (mode === 'ONLINE') {
+            if (radioOnline) radioOnline.checked = true;
+            if (lblOnline) {
+                lblOnline.style.borderColor = '#003366';
+                lblOnline.style.background = '#f0f9ff';
+                lblOnline.style.color = '#003366';
+            }
+            if (lblCash) {
+                lblCash.style.borderColor = '#cbd5e1';
+                lblCash.style.background = '#ffffff';
+                lblCash.style.color = '#475569';
+            }
+            if (grpOnline) grpOnline.style.display = 'block';
+        } else {
+            if (radioCash) radioCash.checked = true;
+            if (lblCash) {
+                lblCash.style.borderColor = '#15803d';
+                lblCash.style.background = '#f0fdf4';
+                lblCash.style.color = '#15803d';
+            }
+            if (lblOnline) {
+                lblOnline.style.borderColor = '#cbd5e1';
+                lblOnline.style.background = '#ffffff';
+                lblOnline.style.color = '#475569';
+            }
+            if (grpOnline) grpOnline.style.display = 'none';
+        }
+    }
+
+    function triggerAdminConfirmModal(action) {
+        pendingAdminAction = action;
+
+        const vchNo = document.getElementById('accVchNo').innerText;
+        const empName = document.getElementById('accEmployee').innerText;
+        const dept = document.getElementById('accDepartment').innerText;
+        const totExp = document.getElementById('accTotalExpense').innerText;
+        const currentRemarks = document.getElementById('accRemarksInput').value.trim();
+
+        document.getElementById('adminModalVchNo').innerText = vchNo;
+        document.getElementById('adminModalEmp').innerText = empName;
+        document.getElementById('adminModalDept').innerText = dept;
+        document.getElementById('adminModalTotExp').innerText = totExp;
+
+        const titleEl = document.getElementById('adminModalTitle');
+        const questionEl = document.getElementById('adminModalQuestion');
+        const btnConfirm = document.getElementById('btnAdminModalConfirmSubmit');
+        const remarksGrp = document.getElementById('modalRemarksGroup');
+        const payModeGrp = document.getElementById('modalPaymentModeGroup');
+        const onlineGrp = document.getElementById('modalOnlineGroup');
+        const utrInput = document.getElementById('modalUtrInput');
+        const utrError = document.getElementById('modalUtrError');
+        const remarksInput = document.getElementById('modalRemarksInput');
+        const helpText = document.getElementById('adminModalHelpText');
+
+        const remarksLabel = document.getElementById('modalRemarksLabel');
+        remarksInput.value = currentRemarks;
+        if (utrInput) utrInput.value = '';
+        if (utrError) utrError.style.display = 'none';
+
+        payModeGrp.style.display = 'none';
+        onlineGrp.style.display = 'none';
+        remarksGrp.style.display = 'block';
+
+        if (action === 'HOD_APPROVE') {
+            titleEl.innerText = "✔ Confirm HOD Approval & Forwarding";
+            questionEl.innerText = "Are you sure you want to approve this voucher and forward it to Accounts?";
+            btnConfirm.innerText = "YES, APPROVE & FORWARD TO ACCOUNTS";
+            btnConfirm.style.background = "#003366";
+            if (remarksLabel) remarksLabel.innerText = "Approval Notes (Optional):";
+            if (remarksInput) remarksInput.placeholder = "Enter approval notes (optional)...";
+            helpText.innerText = "Once approved by HOD, the voucher will move to Accounts for final audit and settlement.";
+        } else if (action === 'APPROVE') {
+            titleEl.innerText = "✔ Confirm Accounts Approval";
+            questionEl.innerText = "Are you sure you want to approve this voucher claim for financial settlement?";
+            btnConfirm.innerText = "YES, ACCOUNTS APPROVE";
+            btnConfirm.style.background = "#15803d";
+            if (remarksLabel) remarksLabel.innerText = "Approval Notes (Optional):";
+            if (remarksInput) remarksInput.placeholder = "Enter approval notes (optional)...";
+            helpText.innerText = "This marks the voucher as approved by Accounts and readies it for payment settlement.";
+        } else if (action === 'REJECT') {
+            titleEl.innerText = "✖ Confirm Rejection";
+            questionEl.innerText = "Are you sure you want to reject this expense voucher claim?";
+            btnConfirm.innerText = "YES, REJECT VOUCHER";
+            btnConfirm.style.background = "#b91c1c";
+            if (remarksLabel) remarksLabel.innerText = "Rejection Reason (Optional):";
+            if (remarksInput) remarksInput.placeholder = "Enter rejection reason (optional)...";
+            helpText.innerText = "Enter optional rejection reason below. This action cannot be undone.";
+        } else if (action === 'SETTLE' || action === 'CONFIRM_SETTLEMENT' || action === 'ISSUE_ADVANCE') {
+            titleEl.innerText = "💳 Confirm Settlement & Payment Mode";
+            questionEl.innerText = "Select payment mode to finalize voucher settlement:";
+            btnConfirm.innerText = "YES, CONFIRM & SETTLE";
+            btnConfirm.style.background = "#7e22ce";
+            if (remarksLabel) remarksLabel.innerText = "Settlement Remarks (Optional):";
+            if (remarksInput) remarksInput.placeholder = "Enter settlement notes or remarks (optional)...";
+            payModeGrp.style.display = 'block';
+            onModalPaymentModeChange('ONLINE');
+            helpText.innerText = "Selecting Online requires a Transaction ID / UTR. Selecting Cash records the payment as cash.";
+        }
+
+        document.getElementById('adminConfirmModalOverlay').style.display = 'flex';
+    }
+
+    function closeAdminConfirmModal() {
+        document.getElementById('adminConfirmModalOverlay').style.display = 'none';
+    }
+
+    function executeFinalAdminAction() {
+        const isSettlement = (pendingAdminAction === 'SETTLE' || pendingAdminAction === 'CONFIRM_SETTLEMENT' || pendingAdminAction === 'ISSUE_ADVANCE');
+
+        if (isSettlement) {
+            const radioSel = document.querySelector('input[name="modal_payment_mode"]:checked');
+            const selectedMode = radioSel ? radioSel.value : 'ONLINE';
+            const utrVal = document.getElementById('modalUtrInput').value.trim();
+            const utrError = document.getElementById('modalUtrError');
+
+            if (selectedMode === 'ONLINE' && !utrVal) {
+                if (utrError) utrError.style.display = 'block';
+                document.getElementById('modalUtrInput').focus();
+                return;
+            }
+
+            document.getElementById('accPaymentMode').value = selectedMode;
+            document.getElementById('accPaymentRef').value = (selectedMode === 'ONLINE') ? utrVal : 'CASH';
+        }
+
+        const modalRemarks = document.getElementById('modalRemarksInput').value.trim();
+        document.getElementById('accRemarksInput').value = modalRemarks;
+        document.getElementById('adminActionType').value = pendingAdminAction;
+
+        closeAdminConfirmModal();
+        document.getElementById('adminActionForm').submit();
+    }
+
+    function filterAdminTable() {
+        const q = document.getElementById('adminSearchInput').value.toLowerCase();
+        const st = document.getElementById('adminStatusFilter').value;
+        const rows = document.querySelectorAll('.vch-admin-row');
+
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            const rStatus = row.getAttribute('data-status');
+
+            const matchesText = text.includes(q);
+            const matchesStatus = (st === 'ALL' || rStatus === st);
+
+            if (matchesText && matchesStatus) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("wheel", function (e) {
+            if (document.activeElement && document.activeElement.type === "number") {
+                document.activeElement.blur();
+            }
+        }, { passive: true });
+
+        document.addEventListener("focusin", function (e) {
+            if (e.target && (e.target.type === "number" || e.target.tagName === "INPUT")) {
+                setTimeout(function () {
+                    if (typeof e.target.select === 'function') {
+                        e.target.select();
+                    }
+                }, 30);
+            }
+        });
+
+        if (isAccountsUser) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialTab = urlParams.get('tab') || 'ledger';
+            switchCashierTab(initialTab);
+        }
+    });
+</script>
+
+{% endblock %}

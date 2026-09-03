@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BHIPL Operation Portal</title>
+    <script>
+        (function() {
+            var savedTheme = localStorage.getItem('bhipl_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+{% if session.get("user_id") %}
+<div class="layout with-header">
+
+    <!-- ===== TIER 1: TOP HEADER BAR ===== -->
+    <header class="top-header">
+        <div class="top-header-left">
+            <a href="/dashboard" class="brand-logo-container">
+                <img src="{{ url_for('static', filename='images/BHIPL Logo.png') }}?v=3" alt="BHIPL Logo" class="brand-logo-img">
+            </a>
+        </div>
+
+
+        <div class="top-header-right">
+            <!-- Shift / Time Status Pill -->
+            <div class="status-pill-item">
+                <span style="color: #10b981;"></span>
+                <span id="headerLiveTime">Fri, 21 Aug • Shift B (Eve)</span>
+            </div>
+
+            <!-- Theme Switcher -->
+            <div class="theme-switcher-wrapper">
+                <button type="button" class="theme-switcher-btn" id="themeToggleBtn" onclick="toggleThemeMenu(event)" title="Change Theme">
+                    <span id="currentThemeIcon">☀️</span>
+                    <span id="currentThemeLabel">Light Executive</span>
+                    <small>▼</small>
+                </button>
+                <div class="theme-dropdown" id="themeDropdown">
+                    <button type="button" class="theme-option-btn" onclick="setAppTheme('light')">☀️ Light Executive</button>
+                    <button type="button" class="theme-option-btn" onclick="setAppTheme('dark')">🌙 Dark Slate</button>
+                    <button type="button" class="theme-option-btn" onclick="setAppTheme('midnight')">🌌 Midnight Tech Cyan</button>
+                </div>
+            </div>
+
+            <!-- User Profile Dropdown Pill -->
+            <div class="nav-item-dropdown">
+                <button type="button" class="user-profile-pill nav-dropdown-trigger">
+                    <div class="user-avatar">{{ session.get("full_name", "U")[0] | upper }}</div>
+                    <span>{{ session.get("full_name") }}</span>
+                    <small style="color: var(--primary-color);">({{ session.get("role") | upper if session.get("role") else 'USER' }})</small>
+                    <small>▼</small>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <div style="padding: 8px 12px; border-bottom: 1px solid var(--border-color);">
+                        <div style="font-size: 13px; font-weight: 700; color: var(--text-primary);">{{ session.get("full_name") }}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">EMP ID: {{ session.get("emp_id") or 'EMP1001' }}</div>
+                        <div style="font-size: 11px; color: var(--primary-color); font-weight: 600;">{{ session.get("department") or 'BHIPL Staff' }}</div>
+                    </div>
+                    <a href="/user/personal/profile" class="nav-dropdown-link">My Profile</a>
+                    <a href="/user/personal/attendance" class="nav-dropdown-link">My Attendance</a>
+                    <div class="nav-dropdown-divider"></div>
+                    <a href="/logout" class="nav-dropdown-link" style="color: var(--danger-color);">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== TIER 2: HORIZONTAL TOP NAVIGATION BAR ===== -->
+    <nav class="top-navbar-container">
+        <div class="nav-links-wrapper">
+            <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}">
+                <span>1. Home</span>
+            </a>
+
+            <a href="/user/personal/attendance" class="nav-item {% if request.path.startswith('/user/personal') %}active{% endif %}">
+                <span>2. Personal</span>
+                {% if unread_count > 0 %}
+                    <span class="badge badge-danger">{{ unread_count }}</span>
+                {% endif %}
+            </a>
+
+            <a href="/expenses" class="nav-item {% if request.path.startswith('/expenses') %}active{% endif %}">
+                <span>3. Expenses</span>
+            </a>
+
+            <a href="/announcements/general" class="nav-item {% if request.path == '/announcements/general' %}active{% endif %}">
+                <span>4. Policy</span>
+                {% if unread_general_count > 0 %}
+                    <span class="badge badge-danger">{{ unread_general_count }}</span>
+                {% endif %}
+            </a>
+
+            <a href="/announcements/department" class="nav-item {% if request.path == '/announcements/department' %}active{% endif %}">
+                <span>5. New OnBoard</span>
+                <!-- <span class="nav-tag-badge kit">Kit</span> -->
+                {% if unread_dept_count > 0 %}
+                    <span class="badge badge-danger">{{ unread_dept_count }}</span>
+                {% endif %}
+            </a>
+
+            <a href="/safety" class="nav-item {% if request.path == '/safety' %}active{% endif %}">
+                <span>6. Safety</span>
+                <!-- <span class="nav-tag-badge zero">Zero Harm</span> -->
+            </a>
+
+            <a href="/general/guidelines" class="nav-item {% if request.path == '/general/guidelines' %}active{% endif %}">
+                <span>7. General Guidelines</span>
+            </a>
+
+            <a href="/videos" class="nav-item {% if request.path == '/videos' %}active{% endif %}">
+                <span>8. Videos</span>
+                <!-- <span class="nav-tag-badge new">New</span> -->
+            </a>
+
+            {% if is_hr %}
+                <a href="/hr/panel" class="nav-item {% if request.path.startswith('/hr/') %}active{% endif %}">
+                    <span>📁 HR Panel</span>
+                </a>
+            {% endif %}
+
+            {% set u_role = (session.get("role") or "")|lower %}
+            {% set u_name = (session.get("full_name") or "")|lower %}
+            {% set u_empid = (session.get("emp_id") or "")|lower %}
+            {% set u_dept = (session.get("department") or "")|lower %}
+            {% if u_role in ['admin', 'hod', 'head', 'manager', 'accounts', 'account', 'finance', 'hr', 'md', 'gm'] or 'hod' in u_role or 'head' in u_role or 'manager' in u_role or 'hod' in u_name or 'head' in u_name or 'manager' in u_name or 'hod' in u_empid or 'head' in u_empid or 'account' in u_dept %}
+                <a href="/admin/expenses" class="nav-item {% if request.path == '/admin/expenses' %}active{% endif %}">
+                    <span>💳 Expense Approvals</span>
+                </a>
+            {% endif %}
+
+            {% if session.get("role") == "admin" %}
+                <div class="nav-item-dropdown">
+                    <button type="button" class="nav-item nav-dropdown-trigger {% if request.path.startswith('/admin/') %}active{% endif %}">
+                        <span>⚙️ Admin Controls</span>
+                        <small>▼</small>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="/admin/roles" class="nav-dropdown-link">🔑 User Roles & Allocation</a>
+                        <a href="/admin/permissions" class="nav-dropdown-link">🛡️ Application Permissions</a>
+                        <a href="/admin/add_app" class="nav-dropdown-link">🚀 Add New Application</a>
+                        <a href="/admin/expenses" class="nav-dropdown-link">💳 Expense Claims & Accounts</a>
+                        <a href="/admin/attendance" class="nav-dropdown-link">📈 Employee Attendance Logs</a>
+                        <a href="/admin/audit_logs" class="nav-dropdown-link">📋 System Audit Logs</a>
+                        <a href="/admin/error_logs" class="nav-dropdown-link">⚠️ Application Error Logs</a>
+                    </div>
+                </div>
+            {% endif %}
+
+            <a href="/logout" class="nav-item" style="margin-left: auto; color: var(--danger-color);">
+                <span>🚪 Logout</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ===== PERSISTENT APPLICATION OVERLAY ===== -->
+    <div id="persistentAppOverlay" class="persistent-app-overlay hidden">
+        <div class="app-container" style="position: relative;">
+            <button type="button" onclick="closeActiveApp()" title="Close Application" style="position: absolute; top: 12px; right: 16px; z-index: 100; background: rgba(239, 68, 68, 0.85); color: #ffffff; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); transition: all 0.2s ease;">✖</button>
+            <iframe id="persistentAppFrame" class="app-iframe" src="about:blank"></iframe>
+        </div>
+    </div>
+
+    <!-- ===== ACTIVE APPLICATION DOCK BAR ===== -->
+    <div id="activeAppDockBar" class="active-app-dock-bar hidden">
+        <div class="dock-bar-info" onclick="restoreActiveApp()">
+            <span class="dock-pulse-dot"></span>
+            <span class="dock-app-label">Active: <strong id="dockAppName">Application</strong></span>
+        </div>
+        <div class="dock-bar-actions">
+            <button type="button" class="dock-btn restore-btn" onclick="restoreActiveApp()">
+                ▶ Resume Work
+            </button>
+            <button type="button" class="dock-btn close-dock-btn" onclick="closeActiveApp()" title="Close Application">
+                ✖
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== IDLE TIMEOUT WARNING MODAL ===== -->
+    <div id="idleWarningModal" class="idle-modal-overlay" style="display: none;">
+        <div class="idle-modal-box">
+            <div class="idle-modal-icon">⏳</div>
+            <h3 class="idle-modal-title">Session Expiring Soon</h3>
+            <p class="idle-modal-desc">
+                You have been inactive for a while.<br>
+                For security reasons, your session will automatically end in:
+            </p>
+            <div class="idle-timer-pill">
+                <span id="idleCountdownDisplay">60</span> seconds
+            </div>
+            <div class="idle-modal-btns">
+                <button type="button" class="btn-idle-keep" onclick="window.bhiplSessionManager.keepAlive()">
+                    ✓ Continue Working
+                </button>
+                <a href="/logout?reason=idle" class="btn-idle-exit">
+                    Logout Now
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% else %}
+
+    <!-- ===== AUTH PAGES (LOGIN / REGISTER) ===== -->
+    {% block auth_content %}{% endblock %}
+
+{% endif %}
+
+<script>
+    function toggleThemeMenu(event) {
+        if (event) event.stopPropagation();
+        const dropdown = document.getElementById('themeDropdown');
+        if (dropdown) {
+            dropdown.classList.toggle('show');
+        }
+    }
+
+    function setAppTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('bhipl_theme', theme);
+        updateThemeUI(theme);
+        const dropdown = document.getElementById('themeDropdown');
+        if (dropdown) dropdown.classList.remove('show');
+    }
+
+    function updateThemeUI(theme) {
+        const iconMap = { light: '☀️', dark: '🌙', midnight: '🌌' };
+        const labelMap = { light: 'Light Executive', dark: 'Dark Slate', midnight: 'Midnight Tech' };
+        const iconSpan = document.getElementById('currentThemeIcon');
+        const labelSpan = document.getElementById('currentThemeLabel');
+        if (iconSpan) iconSpan.textContent = iconMap[theme] || '☀️';
+        if (labelSpan) labelSpan.textContent = labelMap[theme] || 'Light Executive';
+    }
+
+    document.addEventListener('click', function(e) {
+        const dropdown = document.getElementById('themeDropdown');
+        const toggleBtn = document.getElementById('themeToggleBtn');
+        if (dropdown && toggleBtn && !toggleBtn.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentTheme = localStorage.getItem('bhipl_theme') || 'light';
+        updateThemeUI(currentTheme);
+        
+        // Live Header Time Update
+        function updateLiveTime() {
+            const el = document.getElementById('headerLiveTime');
+            if (el) {
+                const now = new Date();
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const dayName = days[now.getDay()];
+                const dateNum = now.getDate();
+                const monthName = months[now.getMonth()];
+                let hours = now.getHours();
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                const ampm = hours >= 12 ? 'pm' : 'am';
+                hours = hours % 12 || 12;
+                el.textContent = `${dayName}, ${dateNum} ${monthName} ${hours}:${minutes}:${seconds} ${ampm} • Shift B (Eve)`;
+            }
+        }
+        setInterval(updateLiveTime, 1000);
+        updateLiveTime();
+    });
+
+    /* Persistent Application Launcher System */
+    window.bhiplAppSystem = {
+        activeApp: null,
+        
+        launch: function(appName, appUrl, appId) {
+            const overlay = document.getElementById('persistentAppOverlay');
+            const dock = document.getElementById('activeAppDockBar');
+            const frame = document.getElementById('persistentAppFrame');
+            const nameEl = document.getElementById('persistentAppName');
+            const dockNameEl = document.getElementById('dockAppName');
+
+            if (!overlay || !frame) return;
+
+            if (!this.activeApp || this.activeApp.id !== appId || frame.src !== appUrl) {
+                this.activeApp = { id: appId, name: appName, url: appUrl };
+                if (nameEl) nameEl.textContent = appName;
+                if (dockNameEl) dockNameEl.textContent = appName;
+                frame.src = appUrl;
+                sessionStorage.setItem('bhipl_active_app', JSON.stringify({ id: appId, name: appName, url: appUrl, state: 'maximized' }));
+            }
+
+            overlay.classList.remove('hidden');
+            if (dock) dock.classList.add('hidden');
+            document.querySelectorAll('.announcement-ticker-bar').forEach(el => el.style.display = 'none');
+        },
+
+        minimize: function() {
+            const overlay = document.getElementById('persistentAppOverlay');
+            const dock = document.getElementById('activeAppDockBar');
+            if (overlay) overlay.classList.add('hidden');
+            if (dock && this.activeApp) dock.classList.remove('hidden');
+            document.querySelectorAll('.announcement-ticker-bar').forEach(el => el.style.display = '');
+            if (this.activeApp) {
+                sessionStorage.setItem('bhipl_active_app', JSON.stringify({ ...this.activeApp, state: 'minimized' }));
+            }
+        },
+
+        restore: function() {
+            const overlay = document.getElementById('persistentAppOverlay');
+            const dock = document.getElementById('activeAppDockBar');
+            if (overlay) overlay.classList.remove('hidden');
+            if (dock) dock.classList.add('hidden');
+            document.querySelectorAll('.announcement-ticker-bar').forEach(el => el.style.display = 'none');
+            if (this.activeApp) {
+                sessionStorage.setItem('bhipl_active_app', JSON.stringify({ ...this.activeApp, state: 'maximized' }));
+            }
+        },
+
+        close: function() {
+            const overlay = document.getElementById('persistentAppOverlay');
+            const dock = document.getElementById('activeAppDockBar');
+            const frame = document.getElementById('persistentAppFrame');
+            if (overlay) overlay.classList.add('hidden');
+            if (dock) dock.classList.add('hidden');
+            if (frame) frame.src = 'about:blank';
+            document.querySelectorAll('.announcement-ticker-bar').forEach(el => el.style.display = '');
+            this.activeApp = null;
+            sessionStorage.removeItem('bhipl_active_app');
+        },
+
+        init: function() {
+            const saved = sessionStorage.getItem('bhipl_active_app');
+            if (saved) {
+                try {
+                    const app = JSON.parse(saved);
+                    this.activeApp = app;
+                    const nameEl = document.getElementById('persistentAppName');
+                    const dockNameEl = document.getElementById('dockAppName');
+                    const frame = document.getElementById('persistentAppFrame');
+                    if (nameEl) nameEl.textContent = app.name;
+                    if (dockNameEl) dockNameEl.textContent = app.name;
+                    if (frame && frame.src !== app.url) frame.src = app.url;
+
+                    // When navigating to portal sections (Personal, Expenses, Policy, Admin, etc.),
+                    // auto-minimize the app to the background dock bar so the selected page content is clear!
+                    const path = window.location.pathname;
+                    const isSubSection = path.startsWith('/user/') || 
+                                         path.startsWith('/admin') || 
+                                         path.startsWith('/expenses') || 
+                                         path.startsWith('/policy') || 
+                                         path.startsWith('/general') || 
+                                         path.startsWith('/announcements');
+
+                    if (isSubSection || app.state === 'minimized') {
+                        this.minimize();
+                    } else {
+                        this.restore();
+                    }
+                } catch(e) {}
+            }
+
+            // Auto-minimize running app when user clicks any top navbar tab
+            document.querySelectorAll('.nav-item').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (this.activeApp) {
+                        this.minimize();
+                    }
+                });
+            });
+        }
+    };
+
+    function launchPersistentApp(appName, appUrl, appId) { window.bhiplAppSystem.launch(appName, appUrl, appId); }
+    function minimizeActiveApp() { window.bhiplAppSystem.minimize(); }
+    function restoreActiveApp() { window.bhiplAppSystem.restore(); }
+    function closeActiveApp() { window.bhiplAppSystem.close(); }
+
+    {% if session.get("user_id") %}
+    (function() {
+        window.bhiplAppSystem.init();
+
+        const TIMEOUT_MINUTES = {{ idle_timeout_minutes | default(10) }};
+        const WARNING_SECONDS = {{ idle_warning_seconds | default(60) }};
+        const TOTAL_TIMEOUT_MS = TIMEOUT_MINUTES * 60 * 1000;
+        const WARNING_MS = WARNING_SECONDS * 1000;
+
+        let lastActivityTime = Date.now();
+        let lastServerPingTime = Date.now();
+        let isWarningShowing = false;
+        let countdownTimer = null;
+        let isLoggingOut = false;
+
+        const warningModal = document.getElementById('idleWarningModal');
+        const countdownDisplay = document.getElementById('idleCountdownDisplay');
+
+        // Central User Activity Handler (Resets client timer immediately)
+        function onUserActivity(e) {
+            if (isLoggingOut) return;
+            lastActivityTime = Date.now();
+
+            if (isWarningShowing) {
+                hideWarning();
+            }
+
+            // Throttle server keepalive ping: ping at most once every 30 seconds
+            const now = Date.now();
+            if (now - lastServerPingTime > 30000) {
+                lastServerPingTime = now;
+                sendKeepAlive();
+            }
+        }
+
+        function sendKeepAlive() {
+            fetch('/ping_activity', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(res => {
+                if (res.status === 401) {
+                    performAutoLogout();
+                }
+            }).catch(() => {});
+        }
+
+        function showWarning() {
+            if (isWarningShowing || isLoggingOut) return;
+            isWarningShowing = true;
+            if (warningModal) warningModal.style.display = 'flex';
+
+            updateCountdown();
+            if (countdownTimer) clearInterval(countdownTimer);
+            countdownTimer = setInterval(updateCountdown, 1000);
+        }
+
+        function hideWarning() {
+            isWarningShowing = false;
+            if (warningModal) warningModal.style.display = 'none';
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+        }
+
+        function updateCountdown() {
+            const elapsed = Date.now() - lastActivityTime;
+            const remainingMs = TOTAL_TIMEOUT_MS - elapsed;
+            const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
+
+            if (countdownDisplay) {
+                countdownDisplay.textContent = remainingSec;
+            }
+
+            if (remainingSec <= 0) {
+                hideWarning();
+                performAutoLogout();
+            }
+        }
+
+        function performAutoLogout() {
+            if (isLoggingOut) return;
+            isLoggingOut = true;
+            hideWarning();
+
+            // Notify server of automatic idle logout
+            fetch('/api/auto_logout', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(() => {
+                window.location.href = '/login?idle=1';
+            }).catch(() => {
+                window.location.href = '/login?idle=1';
+            });
+        }
+
+        // Global interface for "Continue Working" button
+        window.bhiplSessionManager = {
+            keepAlive: function() {
+                if (isLoggingOut) return;
+                lastActivityTime = Date.now();
+                lastServerPingTime = Date.now();
+                hideWarning();
+                sendKeepAlive();
+            }
+        };
+
+        // Master check loop every 1 second
+        setInterval(function() {
+            if (isLoggingOut) return;
+            const elapsed = Date.now() - lastActivityTime;
+            const remainingMs = TOTAL_TIMEOUT_MS - elapsed;
+
+            if (remainingMs <= 0) {
+                performAutoLogout();
+            } else if (remainingMs <= WARNING_MS) {
+                showWarning();
+            } else if (isWarningShowing) {
+                hideWarning();
+            }
+        }, 1000);
+
+        // Passive session health verification every 45 seconds (does not reset last_activity on server)
+        setInterval(function() {
+            if (isLoggingOut) return;
+            fetch('/check_session', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(response => {
+                if (response.status === 401 || response.redirected) {
+                    performAutoLogout();
+                }
+            }).catch(() => {});
+        }, 45000);
+
+        // Comprehensive User Activity Listeners across Window and Document
+        const activityEvents = [
+            'mousedown', 'mousemove', 'click', 'dblclick',
+            'keydown', 'keyup', 'keypress',
+            'scroll', 'wheel',
+            'touchstart', 'touchend', 'touchmove',
+            'focusin', 'input', 'change'
+        ];
+
+        activityEvents.forEach(evt => {
+            window.addEventListener(evt, onUserActivity, { passive: true, capture: true });
+        });
+
+        // Listen for user interactions within persistent iframe application
+        const appFrame = document.getElementById('persistentAppFrame');
+        if (appFrame) {
+            appFrame.addEventListener('load', function() {
+                try {
+                    const frameDoc = appFrame.contentDocument || appFrame.contentWindow.document;
+                    if (frameDoc) {
+                        activityEvents.forEach(evt => {
+                            frameDoc.addEventListener(evt, onUserActivity, { passive: true, capture: true });
+                        });
+                    }
+                } catch(e) {}
+            });
+        }
+    })();
+    {% endif %}
+</script>
+
+<style>
+/* IDLE TIMEOUT WARNING MODAL STYLES */
+.idle-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(6px);
+    z-index: 9999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInOverlay 0.25s ease-out forwards;
+}
+
+.idle-modal-box {
+    background: #ffffff;
+    width: 90%;
+    max-width: 440px;
+    border-radius: 16px;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    border: 1px solid #e2e8f0;
+    animation: popInCard 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.idle-modal-icon {
+    font-size: 42px;
+    margin-bottom: 12px;
+}
+
+.idle-modal-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 8px 0;
+}
+
+.idle-modal-desc {
+    font-size: 14px;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+}
+
+.idle-timer-pill {
+    display: inline-block;
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fcd34d;
+    font-size: 18px;
+    font-weight: 800;
+    padding: 8px 20px;
+    border-radius: 9999px;
+    margin-bottom: 24px;
+}
+
+.idle-modal-btns {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.btn-idle-keep {
+    flex: 1;
+    background: #0284c7;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-idle-keep:hover {
+    background: #0369a1;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.4);
+}
+
+.btn-idle-exit {
+    padding: 12px 18px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-idle-exit:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+/* SUCCESS MODAL BACKDROP & CARD ANIMATION (GPAY STYLE) */
+.success-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInOverlay 0.3s ease-out forwards;
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.success-modal-card {
+    background: #ffffff;
+    width: 90%;
+    max-width: 380px;
+    border-radius: 12px;
+    padding: 24px 20px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0, 51, 102, 0.25), 0 8px 16px rgba(0,0,0,0.1);
+    transform: scale(0.88);
+    opacity: 0;
+    animation: popInCard 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.05s;
+}
+
+@keyframes popInCard {
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ANIMATED CHECKMARK ICON (GPAY STYLE) */
+.success-icon-container {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 14px auto;
+}
+
+.checkmark-svg {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 3.5;
+    stroke: #16a34a;
+    stroke-miterlimit: 10;
+    box-shadow: inset 0px 0px 0px #16a34a;
+}
+
+.checkmark-circle {
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    stroke-width: 3.5;
+    stroke-miterlimit: 10;
+    stroke: #16a34a;
+    fill: none;
+    animation: strokeCircle 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.checkmark-check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: strokeCheck 0.35s cubic-bezier(0.65, 0, 0.45, 1) 0.35s forwards;
+}
+
+@keyframes strokeCircle {
+    100% { stroke-dashoffset: 0; }
+}
+
+@keyframes strokeCheck {
+    100% { stroke-dashoffset: 0; }
+}
+
+.success-modal-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: #003366;
+    margin: 0 0 4px 0;
+    letter-spacing: 0.3px;
+}
+
+.success-modal-divider {
+    height: 2px;
+    background: #e2e8f0;
+    width: 50px;
+    margin: 8px auto 14px auto;
+    border-radius: 2px;
+}
+
+.success-modal-details {
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 12px;
+}
+
+.success-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    color: #475569;
+    font-weight: 600;
+}
+
+.success-detail-row:last-child {
+    margin-bottom: 0;
+}
+
+.success-modal-message {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    margin: 0 0 18px 0;
+    line-height: 1.4;
+}
+
+.btn-success-ok {
+    background: #003366;
+    color: #ffffff;
+    border: none;
+    width: 100%;
+    padding: 10px 0;
+    font-size: 13px;
+    font-weight: 900;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: background 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 4px 10px rgba(0, 51, 102, 0.2);
+}
+
+.btn-success-ok:hover {
+    background: #002244;
+}
+
+.btn-success-ok:active {
+    transform: scale(0.98);
+}
+</style>
+
+<div id="successModalOverlay" class="success-modal-backdrop" style="display: none;">
+    <div class="success-modal-card">
+        <!-- ANIMATED CHECKMARK ICON -->
+        <div class="success-icon-container">
+            <svg class="checkmark-svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="23" fill="none" />
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+            </svg>
+        </div>
+
+        <h3 id="successModalTitle" class="success-modal-title">Voucher Submitted</h3>
+        <div class="success-modal-divider"></div>
+
+        <div class="success-modal-details" id="successModalDetails">
+            <div class="success-detail-row" id="successModalVchRow">
+                <span>Voucher No:</span>
+                <strong id="successModalVchNo" style="color: #003366;">VCH-2026-XXXX</strong>
+            </div>
+            <div class="success-detail-row" id="successModalAmtRow" style="display: none;">
+                <span>Amount:</span>
+                <strong id="successModalAmt" style="color: #15803d; font-size: 14px;">₹0.00</strong>
+            </div>
+            <div class="success-detail-row" id="successModalModeRow" style="display: none;">
+                <span>Payment Mode:</span>
+                <strong id="successModalMode" style="color: #003366;">CASH</strong>
+            </div>
+            <div class="success-detail-row" id="successModalRefRow" style="display: none;">
+                <span>Transaction ID:</span>
+                <strong id="successModalRef" style="color: #6b21a8; font-size: 11px;">-</strong>
+            </div>
+        </div>
+
+        <p id="successModalMessage" class="success-modal-message">Your voucher has been processed successfully.</p>
+
+        <button type="button" class="btn-success-ok" onclick="closeSuccessPopup()">OK</button>
+    </div>
+</div>
+
+<script>
+function showSuccessPopup(config) {
+    const overlay = document.getElementById('successModalOverlay');
+    if (!overlay) return;
+
+    const elTitle = document.getElementById('successModalTitle');
+    const elVchNo = document.getElementById('successModalVchNo');
+    const elAmtRow = document.getElementById('successModalAmtRow');
+    const elAmt = document.getElementById('successModalAmt');
+    const elModeRow = document.getElementById('successModalModeRow');
+    const elMode = document.getElementById('successModalMode');
+    const elRefRow = document.getElementById('successModalRefRow');
+    const elRef = document.getElementById('successModalRef');
+    const elMessage = document.getElementById('successModalMessage');
+
+    const action = (config.actionType || config.action || '').toUpperCase();
+    const vchNo = config.voucherNumber || config.vch_no || config.vch || 'VCH-2026-XXXX';
+    const amt = config.amount || config.amt || '';
+    const mode = (config.paymentMode || config.mode || '').toUpperCase();
+    const ref = config.transactionId || config.ref || '';
+
+    // Reset visibility
+    elAmtRow.style.display = 'none';
+    elModeRow.style.display = 'none';
+    elRefRow.style.display = 'none';
+
+    if (action === 'SUBMITTED' || action === 'SAVE_DRAFT') {
+        elTitle.innerText = config.title || 'Voucher Submitted';
+        elMessage.innerText = config.message || 'Your voucher has been submitted successfully.';
+    } else if (action === 'HOD_APPROVE') {
+        elTitle.innerText = config.title || 'Voucher Approved';
+        elMessage.innerText = config.message || 'The voucher has been approved successfully.';
+    } else if (action === 'APPROVE') {
+        elTitle.innerText = config.title || 'Accounts Approved';
+        elMessage.innerText = config.message || 'The voucher has been approved by Accounts.';
+    } else if (action === 'SETTLE' || action === 'CONFIRM_SETTLEMENT' || action === 'ISSUE_ADVANCE') {
+        elTitle.innerText = config.title || 'Payment Settled';
+        elMessage.innerText = config.message || 'Settlement completed successfully.';
+
+        if (amt) {
+            let numAmt = parseFloat(amt);
+            elAmt.innerText = !isNaN(numAmt) ? ('₹' + numAmt.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})) : amt;
+            elAmtRow.style.display = 'flex';
+        }
+        if (mode) {
+            elMode.innerText = mode;
+            elModeRow.style.display = 'flex';
+        }
+        if (mode === 'ONLINE' && ref) {
+            elRef.innerText = ref;
+            elRefRow.style.display = 'flex';
+        }
+    } else {
+        elTitle.innerText = config.title || 'Action Completed';
+        elMessage.innerText = config.message || 'Operation completed successfully.';
+    }
+
+    elVchNo.innerText = vchNo;
+
+    // Reset checkmark animation by re-inserting SVG
+    const iconBox = overlay.querySelector('.success-icon-container');
+    if (iconBox) {
+        iconBox.innerHTML = `
+            <svg class="checkmark-svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="23" fill="none" />
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+            </svg>
+        `;
+    }
+
+    overlay.style.display = 'flex';
+}
+
+function closeSuccessPopup() {
+    const overlay = document.getElementById('successModalOverlay');
+    if (overlay) overlay.style.display = 'none';
+
+    if (window.history && window.history.pushState) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('success_action');
+        url.searchParams.delete('vch_no');
+        url.searchParams.delete('vch');
+        url.searchParams.delete('amt');
+        url.searchParams.delete('mode');
+        url.searchParams.delete('ref');
+        url.searchParams.delete('saved');
+        const cleanSearch = url.searchParams.toString();
+        const newUrl = url.pathname + (cleanSearch ? '?' + cleanSearch : '');
+        window.history.pushState({ path: newUrl }, '', newUrl);
+    }
+}
+
+// Auto-trigger on page load if URL params contain success info
+document.addEventListener("DOMContentLoaded", function() {
+    const params = new URLSearchParams(window.location.search);
+    const successAction = params.get('success_action') || (params.get('saved') === '1' ? 'SUBMITTED' : '');
+    const vchNo = params.get('vch_no') || params.get('vch') || '';
+
+    if (successAction && vchNo) {
+        showSuccessPopup({
+            actionType: successAction,
+            voucherNumber: vchNo,
+            amount: params.get('amt') || '',
+            paymentMode: params.get('mode') || '',
+            transactionId: params.get('ref') || ''
+        });
+    }
+});
+
+/* REUSABLE VOUCHER WORKFLOW TIMELINE RENDERER */
+function renderVoucherWorkflowTimeline(data, targetContainerId) {
+    const container = document.getElementById(targetContainerId);
+    if (!container) return;
+
+    if (!data) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const vType = data.voucher_type || 'Expense';
+    const status = (data.status || 'DRAFT').toUpperCase();
+    const rejRole = (data.rejected_by_role || 'Accounts').toUpperCase();
+
+    // Determine 5-step pipeline based on voucher type
+    let steps = [];
+    if (vType === 'Trip Advance' || vType === 'Advance') {
+        steps = [
+            { key: 'CREATED', label: 'CREATED' },
+            { key: 'SUBMITTED', label: 'SUBMITTED' },
+            { key: 'HOD_APPROVED', label: 'HOD APPROVED' },
+            { key: 'ADVANCE_ISSUED', label: 'ADVANCE ISSUED' },
+            { key: 'SETTLED', label: 'ADVANCE SETTLED' }
+        ];
+    } else {
+        steps = [
+            { key: 'CREATED', label: 'CREATED' },
+            { key: 'SUBMITTED', label: 'SUBMITTED' },
+            { key: 'HOD_APPROVED', label: 'HOD APPROVED' },
+            { key: 'APPROVED', label: 'ACCOUNTS APPROVED' },
+            { key: 'SETTLED', label: 'SETTLED' }
+        ];
+    }
+
+    let statusDisplayStr = status === 'ADVANCE_ISSUED' ? 'TRIP ADVANCE ISSUED' : status.replace(/_/g, ' ');
+
+    let html = `
+        <div class="vch-workflow-card">
+            <div class="vch-workflow-header">
+                <div class="vch-workflow-title">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>VOUCHER STATUS</span>
+                </div>
+                <div class="vch-workflow-status-badge">STATUS: ${statusDisplayStr}</div>
+            </div>
+            <div class="vch-workflow-stepper">
+    `;
+
+    steps.forEach((st, idx) => {
+        let stepState = 'pending'; // completed | current | pending | rejected
+        let iconHtml = '○';
+        let subText = 'Pending';
+        let labelText = st.label;
+
+        // Step 1: CREATED
+        if (st.key === 'CREATED') {
+            stepState = 'completed';
+            iconHtml = '✓';
+            subText = data.created_at_str || data.submitted_at_str || data.submitted_at || data.start_date || 'Completed';
+        }
+        // Step 2: SUBMITTED
+        else if (st.key === 'SUBMITTED') {
+            if (['SUBMITTED', 'HOD_APPROVED', 'APPROVED', 'SETTLED', 'CLOSED', 'ADVANCE_ISSUED'].includes(status) || status === 'REJECTED') {
+                stepState = 'completed';
+                iconHtml = '✓';
+                subText = data.submitted_at_str || data.submitted_at || 'Completed';
+            } else if (status === 'DRAFT') {
+                stepState = 'current';
+                iconHtml = '●';
+                subText = 'In Progress (Draft)';
+            }
+        }
+        // Step 3: HOD_APPROVED
+        else if (st.key === 'HOD_APPROVED') {
+            if (status === 'REJECTED' && (rejRole === 'HOD' || (data.rejected_by_name && data.rejected_by_name.toLowerCase().includes('hod')))) {
+                stepState = 'rejected';
+                iconHtml = '✕';
+                labelText = 'REJECTED BY HOD';
+                subText = data.rejected_at_str || 'Rejected';
+            } else if (['HOD_APPROVED', 'APPROVED', 'SETTLED', 'CLOSED', 'ADVANCE_ISSUED'].includes(status) || (status === 'REJECTED' && (rejRole === 'ACCOUNTS' || data.hod_approved_at_str))) {
+                stepState = 'completed';
+                iconHtml = '✓';
+                subText = data.hod_approved_at_str || data.hod_approved_at || 'Completed';
+            } else if (status === 'SUBMITTED') {
+                stepState = 'current';
+                iconHtml = '●';
+                subText = 'In Progress (HOD Review)';
+            }
+        }
+        // Step 4: APPROVED / ADVANCE_ISSUED
+        else if (st.key === 'APPROVED' || st.key === 'ADVANCE_ISSUED') {
+            if (status === 'REJECTED' && (rejRole === 'ACCOUNTS' || (!rejRole || rejRole === 'OTHER'))) {
+                stepState = 'rejected';
+                iconHtml = '✕';
+                labelText = 'REJECTED BY ACCOUNTS';
+                subText = data.rejected_at_str || 'Rejected';
+            } else if (['APPROVED', 'SETTLED', 'CLOSED', 'ADVANCE_ISSUED'].includes(status)) {
+                stepState = 'completed';
+                iconHtml = '✓';
+                subText = data.approved_at_str || data.advance_issued_at_str || data.settled_at_str || 'Completed';
+            } else if (status === 'HOD_APPROVED') {
+                stepState = 'current';
+                iconHtml = '●';
+                subText = 'In Progress (Accounts Review)';
+            }
+        }
+        // Step 5: SETTLED
+        else if (st.key === 'SETTLED') {
+            if (['SETTLED', 'CLOSED'].includes(status)) {
+                stepState = 'completed';
+                iconHtml = '✓';
+                subText = data.settled_at_str || 'Completed';
+            } else if (['APPROVED', 'ADVANCE_ISSUED'].includes(status)) {
+                stepState = 'current';
+                iconHtml = '●';
+                subText = 'In Progress (Pending Settlement)';
+            }
+        }
+
+        html += `
+            <div class="wf-step ${stepState}">
+                <div class="wf-circle">${iconHtml}</div>
+                <div class="wf-label">${labelText}</div>
+                <div class="wf-time">${subText}</div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+</script>
+
+<style>
+/* VOUCHER WORKFLOW TIMELINE CARD STYLING */
+.vch-workflow-card {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-top: 20px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+.vch-workflow-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+}
+
+.vch-workflow-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #003366;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.vch-workflow-status-badge {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 16px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.vch-workflow-stepper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+    width: 100%;
+}
+
+.wf-step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    padding: 0 4px;
+}
+
+.wf-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 17px;
+    left: 50%;
+    width: 100%;
+    height: 3px;
+    background: #cbd5e1;
+    z-index: -1;
+}
+
+.wf-step.completed:not(:last-child)::after {
+    background: #10b981;
+}
+
+.wf-step.rejected:not(:last-child)::after {
+    background: #cbd5e1;
+}
+
+.wf-circle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    background: #ffffff;
+    border: 2.5px solid #94a3b8;
+    color: #64748b;
+    transition: all 0.3s ease;
+}
+
+.wf-step.completed .wf-circle {
+    background: #10b981;
+    border-color: #059669;
+    color: #ffffff;
+}
+
+.wf-step.current .wf-circle {
+    background: #003366;
+    border-color: #3b82f6;
+    color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25);
+    animation: wfPulse 2s infinite;
+}
+
+.wf-step.rejected .wf-circle {
+    background: #ef4444;
+    border-color: #dc2626;
+    color: #ffffff;
+}
+
+.wf-step.pending .wf-circle {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #94a3b8;
+}
+
+.wf-label {
+    margin-top: 10px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #334155;
+    text-transform: uppercase;
+}
+
+.wf-step.completed .wf-label { color: #065f46; }
+.wf-step.current .wf-label { color: #003366; }
+.wf-step.rejected .wf-label { color: #991b1b; }
+.wf-step.pending .wf-label { color: #94a3b8; }
+
+.wf-time {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 3px;
+    line-height: 1.3;
+}
+
+.wf-step.completed .wf-time { color: #047857; }
+.wf-step.current .wf-time { color: #0284c7; }
+.wf-step.rejected .wf-time { color: #b91c1c; }
+
+@keyframes wfPulse {
+    0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+    70% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+@media (max-width: 640px) {
+    .vch-workflow-stepper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+    .wf-step {
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+        width: 100%;
+        gap: 12px;
+    }
+    .wf-step:not(:last-child)::after {
+        top: 34px;
+        left: 16px;
+        width: 3px;
+        height: 100%;
+    }
+    .wf-label { margin-top: 0; }
+}
+</style>
+
+</body>
+</html>

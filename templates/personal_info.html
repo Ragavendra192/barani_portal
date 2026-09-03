@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="personal-wrapper">
+
+    <!-- ===== PAGE HEADER ===== -->
+    <div class="welcome-banner-card" style="margin-bottom: 24px;">
+        <div>
+            <span class="welcome-badge">MY ACCOUNT & WORKSPACE</span>
+            <h1 class="welcome-title">Personal Information</h1>
+            <p class="welcome-subtitle">View and manage your attendance logs and employee profile details.</p>
+        </div>
+    </div>
+
+    <!-- ===== TOP NAVIGATION TABS ===== -->
+    <div class="tabs-container">
+        <a href="/user/personal/attendance" class="tab-btn {% if active_tab == 'attendance' %}active{% endif %}">
+            <span>Attendance Logs</span>
+        </a>
+        <a href="/user/personal/profile" class="tab-btn {% if active_tab == 'profile' %}active{% endif %}">
+            <span>My Profile</span>
+        </a>
+    </div>
+
+    <div class="personal-content">
+        {% block tab_content %}{% endblock %}
+    </div>
+
+</div>
+{% endblock %}

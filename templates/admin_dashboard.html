@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- WELCOME BANNER CARD -->
+<div class="welcome-banner-card">
+    <div>
+        <span class="welcome-badge">SYSTEM ADMINISTRATION CONSOLE</span>
+        <h1 class="welcome-title">Welcome, {{ session.get("full_name") or "Administrator" }} 👋</h1>
+        <p class="welcome-subtitle">Manage portal roles, application permissions, attendance logs, and system settings.</p>
+    </div>
+    <div class="welcome-actions-group">
+        <a href="/admin/roles" class="btn-apply-leave-banner">
+            <span>🔑 User Roles</span>
+        </a>
+        <a href="/admin/permissions" class="btn-secondary" style="font-weight: 700;">
+            <span>🛡️ App Permissions</span>
+        </a>
+    </div>
+</div>
+
+<!-- 4 KPI SUMMARY CARDS -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-icon-box leave">🔑</div>
+        <div>
+            <div class="kpi-value">Role Control</div>
+            <div class="kpi-label">HOD & Supervisor Allocation</div>
+        </div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-icon-box expense">🛡️</div>
+        <div>
+            <div class="kpi-value">Permissions</div>
+            <div class="kpi-label">Module Rights Management</div>
+        </div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-icon-box notices">🚀</div>
+        <div>
+            <div class="kpi-value">{{ apps|length if apps else 0 }} Apps</div>
+            <div class="kpi-label">Configured Enterprise Apps</div>
+        </div>
+    </div>
+
+    <div class="kpi-card">
+        <div class="kpi-icon-box safety">📈</div>
+        <div>
+            <div class="kpi-value">Logs</div>
+            <div class="kpi-label">Attendance & System Activity</div>
+        </div>
+    </div>
+</div>
+
+<!-- 2-COLUMN WORKSPACE GRID -->
+<div class="dashboard-split-grid">
+    
+    <!-- LEFT COLUMN: QUICK ADMIN ACTIONS HUB -->
+    <div class="section-card">
+        <div class="section-card-header">
+            <div class="section-card-title">
+                <span>⚙️ Administrative Control Hub</span>
+            </div>
+            <div class="section-card-subtitle">Direct Management Tools</div>
+        </div>
+
+        <div class="quick-action-grid">
+            <a href="/admin/roles" class="quick-action-tile">
+                <div class="tile-icon-wrapper">🔑</div>
+                <div class="tile-title">Role Allocation</div>
+                <div class="tile-subtitle">Appoint HODs & Supervisors</div>
+            </a>
+
+            <a href="/admin/permissions" class="quick-action-tile">
+                <div class="tile-icon-wrapper">🛡️</div>
+                <div class="tile-title">App Permissions</div>
+                <div class="tile-subtitle">User Module Rights</div>
+            </a>
+
+            <a href="/admin/add_app" class="quick-action-tile">
+                <div class="tile-icon-wrapper">🚀</div>
+                <div class="tile-title">Add Application</div>
+                <div class="tile-subtitle">Register Enterprise Apps</div>
+            </a>
+
+            <a href="/admin/attendance" class="quick-action-tile">
+                <div class="tile-icon-wrapper">📈</div>
+                <div class="tile-title">Attendance Logs</div>
+                <div class="tile-subtitle">All Staff Logs</div>
+            </a>
+
+            <a href="/announcements/general" class="quick-action-tile">
+                <div class="tile-icon-wrapper">📢</div>
+                <div class="tile-title">Announcements</div>
+                <div class="tile-subtitle">Publish General Notices</div>
+            </a>
+
+            <a href="/hr/panel" class="quick-action-tile">
+                <div class="tile-icon-wrapper">📁</div>
+                <div class="tile-title">HR Panel</div>
+                <div class="tile-subtitle">Attendance & Excel Reports</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: CONFIGURED ENTERPRISE APPS -->
+    <div>
+        <div class="sso-apps-card">
+            <div class="section-card-header" style="margin-bottom: 0;">
+                <div class="section-card-title" style="font-size: 14px;">
+                    <span>🚀 Enterprise Portal Apps</span>
+                </div>
+                <a href="/admin/add_app" class="section-card-subtitle" style="color: var(--primary-color); text-decoration: none;">+ Add App</a>
+            </div>
+
+            <div class="sso-app-list">
+                {% if apps %}
+                    {% for app in apps %}
+                    <a href="/launch/{{ app[0] }}" onclick="if('{{ app[2] }}'.startsWith('http')) { event.preventDefault(); launchPersistentApp('{{ app[1] }}', '{{ app[2] }}', {{ app[0] }}); }" class="sso-app-item">
+                        <div class="sso-app-info">
+                            {% if app[3] %}
+                                <img src="{{ url_for('static', filename='images/' ~ app[3]) }}" style="width: 22px; height: 22px; object-fit: contain;" alt="{{ app[1] }}">
+                            {% else %}
+                                <span style="font-size: 18px;">💻</span>
+                            {% endif %}
+                            <span>{{ app[1] }}</span>
+                        </div>
+                        <span class="btn-open-portal">Launch Module ↗</span>
+                    </a>
+                    {% endfor %}
+                {% else %}
+                    <div style="font-size: 13px; color: var(--text-muted); padding: 14px; text-align: center;">No applications registered yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- BOTTOM TICKER -->
+<div class="announcement-ticker-bar">
+    <div class="ticker-badges-group">
+        <span class="ticker-badge announcements">📌 ANNOUNCEMENTS</span>
+        <span class="ticker-badge notice">ADMIN MODE</span>
+    </div>
+    <div class="ticker-content-marquee">
+        {% if notices %}
+            {% for n in notices %}
+                <strong>{{ n.title }}</strong>: {{ n.description[:90] }}... &nbsp;&nbsp;|&nbsp;&nbsp; 
+            {% endfor %}
+        {% else %}
+            System Administration Active — You have full rights to allocate roles, assign application permissions, and broadcast company notices.
+        {% endif %}
+    </div>
+    <div class="ticker-controls-group">
+        <a href="/announcements/general" class="btn-view-all-notices">View Notices ➔</a>
+    </div>
+</div>{% endblock %}

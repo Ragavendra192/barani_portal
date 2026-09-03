@@ -1,0 +1,769 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dept-notices-container">
+    <div class="page-header" style="margin-bottom: 25px;">
+        <h2>🏢 Department Notice Board</h2>
+        <p class="muted-text">Access notices and announcements specific to your department (<strong>{{ department_name }}</strong>).</p>
+    </div>
+
+    <!-- Sub Navbar Tab Selector -->
+    <div class="sub-navbar">
+        <button class="nav-tab active" onclick="switchTab('notices-tab', this)">
+            <span>📋</span> Notice Board
+        </button>
+        {% if is_publisher %}
+        <button class="nav-tab" onclick="switchTab('manage-tab', this)">
+            <span>⚙️</span> Manage Dept Notices
+        </button>
+        <button class="nav-tab" onclick="switchTab('create-tab', this)">
+            <span>✍️</span> Compose Dept Notice
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- TAB 1: Notice Board -->
+    <div id="notices-tab" class="tab-content-panel active" style="margin-top: 20px;">
+        <div class="table-card">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">Status</th>
+                        <th>Notice Title</th>
+                        <th>Priority</th>
+                        <th>Posted By</th>
+                        <th>Role</th>
+                        <th>Publish Date</th>
+                        <th>File</th>
+                        <th style="text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for n in notices %}
+                    <tr id="notice-row-{{ n.id }}" class="notice-row {% if not n.is_read %}unread-highlight{% endif %} {% if n.priority == 'Critical' %}critical-notice-row{% endif %}">
+                        <td>
+                            {% if not n.is_read %}
+                                <span class="new-dot" id="new-dot-{{ n.id }}">New</span>
+                            {% else %}
+                                <span class="read-check">✓</span>
+                            {% endif %}
+                        </td>
+                        <td class="bold-text">
+                            {{ n.title }}
+                            {% if n.priority == 'Critical' %}
+                                <span class="pulsing-critical-icon" title="Critical Alert!">⚠️</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="priority-badge {{ n.priority.lower() }}">
+                                {{ n.priority }}
+                            </span>
+                        </td>
+                        <td>{{ n.creator }}</td>
+                        <td><span class="role-badge {{ n.creator_role.lower() }}">{{ n.creator_role }}</span></td>
+                        <td>{{ n.publish_date.strftime("%d-%m-%Y %H:%M") }}</td>
+                        <td>
+                            {% if n.attachment %}
+                                <a href="/announcements/file/{{ n.attachment }}" target="_blank" class="attachment-download-link" title="Download Attachment">📎</a>
+                            {% else %}
+                                <span class="no-file">-</span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;">
+                            <button onclick="openNoticeModal({{ n.id }})" class="btn-action view-details">View Details</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="empty-state">No department notices available at this time.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_publisher %}
+    <!-- TAB 2: Manage Dept Announcements -->
+    <div id="manage-tab" class="tab-content-panel" style="margin-top: 20px;">
+        <div class="table-card">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Priority</th>
+                        <th>Creator</th>
+                        <th>Publish Date</th>
+                        <th>Expiry Date</th>
+                        <th>Status</th>
+                        <th>Read Stats</th>
+                        <th style="width: 250px; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in manage_notices %}
+                    <tr>
+                        <td class="bold-text">{{ m.title }}</td>
+                        <td>
+                            <span class="priority-badge {{ m.priority.lower() }}">{{ m.priority }}</span>
+                        </td>
+                        <td>{{ m.creator }}</td>
+                        <td>{{ m.publish_date.strftime("%d-%m-%Y %H:%M") }}</td>
+                        <td>{{ m.expiry_date.strftime("%d-%m-%Y %H:%M") if m.expiry_date else 'No Expiry' }}</td>
+                        <td>
+                            {% if m.is_active %}
+                                <span class="status-badge active"><span class="dot"></span> Active</span>
+                            {% else %}
+                                <span class="status-badge inactive"><span class="dot"></span> Archived</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="read-stats-mini">
+                                <strong>{{ m.viewed }}</strong> / {{ m.total_targets }} ({{ m.read_rate }}%)
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons" style="justify-content: center; gap: 6px; display: flex;">
+                                {% if is_hod %}
+                                <button onclick="openRosterModal({{ m.id }})" class="btn-action view-details" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;">Track Views</button>
+                                {% endif %}
+                                {% if m.is_active %}
+                                <form action="/announcements/archive/{{ m.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Archive this notice? It will disappear from employee dashboards.');">
+                                    <button type="submit" class="btn-action edit" style="background:#fffbeb; color:#d97706; border-color:#fef3c7;">Archive</button>
+                                </form>
+                                {% endif %}
+                                <form action="/announcements/delete/{{ m.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Permanently delete this announcement?');">
+                                    <button type="submit" class="btn-action delete">Delete</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="empty-state">No department announcements created by you.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: Compose Dept Notice -->
+    <div id="create-tab" class="tab-content-panel" style="margin-top: 20px;">
+        <div class="form-card">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-row">
+                    <div class="form-group col-md-8">
+                        <label for="title" class="form-label">Notice Title</label>
+                        <input type="text" name="title" id="title" class="form-control" placeholder="Enter announcement heading" required>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="target_dept" class="form-label">Target Department</label>
+                        <input type="text" id="target_dept" class="form-control" value="{{ department_name }}" disabled style="background-color: #f1f5f9; font-weight: 600;">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label for="priority" class="form-label">Priority</label>
+                        <select name="priority" id="priority" class="form-select" required>
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                            <option value="Critical">Critical</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">Description / Content</label>
+                    <textarea name="description" id="description" class="form-control" rows="8" placeholder="Type notice description here..." required></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label for="publish_date" class="form-label">Publish Date & Time</label>
+                        <input type="datetime-local" name="publish_date" id="publish_date" class="form-control" required>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="expiry_date" class="form-label">Expiry Date & Time (Optional)</label>
+                        <input type="datetime-local" name="expiry_date" id="expiry_date" class="form-control">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="attachment" class="form-label">Attachment (PDF, Word, Excel, Image)</label>
+                        <input type="file" name="attachment" id="attachment" class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-actions" style="margin-top: 20px;">
+                    <button type="submit" class="btn-submit">Publish Department Notice</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- NOTICE DETAIL MODAL -->
+<div id="noticeModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 id="modalNoticeTitle">Notice Title</h3>
+            <button onclick="closeNoticeModal()" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-meta">
+                <div>Posted By: <strong id="modalNoticeAuthor">Author</strong> (<span id="modalNoticeRole">Role</span>)</div>
+                <div>Publish Date: <strong id="modalNoticeDate">Date</strong></div>
+                <div>Priority: <span id="modalNoticePriority" class="priority-badge">Priority</span></div>
+                <div>Department: <strong id="modalNoticeDept">Dept</strong></div>
+            </div>
+            
+            <hr style="margin:15px 0; border:0; border-top:1px solid #e2e8f0;">
+            
+            <div id="modalNoticeContent" class="modal-content-html">
+                Notice body content here...
+            </div>
+            
+            <div id="modalNoticeAttachmentContainer" style="margin-top:20px; display:none;">
+                <strong>Attached File:</strong>
+                <a id="modalNoticeAttachmentLink" href="#" target="_blank" class="attachment-download-link" style="margin-left: 10px;">Download file</a>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="closeNoticeModal()" class="btn-close-modal">Close</button>
+        </div>
+    </div>
+</div>
+
+{% if is_hod %}
+<!-- ROSTER TRACKING MODALS -->
+{% for m in manage_notices %}
+<div id="rosterModal-{{ m.id }}" class="modal-overlay roster-tracking-modal" style="display: none;">
+    <div class="modal-card" style="max-width: 750px;">
+        <div class="modal-header">
+            <h3 style="margin:0;">👁️ Roster Tracking</h3>
+            <button onclick="closeRosterModal({{ m.id }})" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body" style="max-height: 500px;">
+            <div style="margin-bottom: 20px;">
+                <h4 style="margin: 0 0 5px 0; color: #1e293b;">{{ m.title }}</h4>
+                <span class="priority-badge {{ m.priority.lower() }}">{{ m.priority }} Priority</span>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <span class="stat-num">{{ m.total_targets }}</span>
+                    <span class="stat-lbl">Target Roster</span>
+                </div>
+                <div class="stat-card viewed">
+                    <span class="stat-num">{{ m.viewed }}</span>
+                    <span class="stat-lbl">Viewed</span>
+                </div>
+                <div class="stat-card pending">
+                    <span class="stat-num">{{ m.pending }}</span>
+                    <span class="stat-lbl">Pending</span>
+                </div>
+                <div class="stat-card rate">
+                    <span class="stat-num">{{ m.read_rate }}%</span>
+                    <span class="stat-lbl">Read Rate</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                <label for="roster-search-{{ m.id }}" class="form-label" style="margin:0; font-weight:600; font-size:13px; color:#475569;">Filter List:</label>
+                <input type="text" id="roster-search-{{ m.id }}" class="form-control" placeholder="Search by name or Employee ID..." onkeyup="filterRoster({{ m.id }})" style="padding: 6px 12px; font-size: 13px; width: 280px; margin: 0;">
+            </div>
+
+            <div class="table-card" style="max-height: 250px; overflow-y: auto;">
+                <table class="premium-table roster-table" id="roster-table-{{ m.id }}">
+                    <thead>
+                        <tr>
+                            <th>Employee ID</th>
+                            <th>Employee Name</th>
+                            <th>Status</th>
+                            <th>Viewed Date</th>
+                            <th>Viewed Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in m.employees %}
+                        <tr class="roster-row">
+                            <td class="bold-text emp-id-cell">{{ emp.emp_id }}</td>
+                            <td class="emp-name-cell">{{ emp.name }}</td>
+                            <td>
+                                {% if emp.viewed %}
+                                    <span class="view-status-badge viewed">✓ Viewed</span>
+                                {% else %}
+                                    <span class="view-status-badge pending">✗ Not Viewed</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ emp.date if emp.date else '-' }}</td>
+                            <td>{{ emp.time if emp.time else '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button onclick="closeRosterModal({{ m.id }})" class="btn-close-modal">Close Tracker</button>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<script src="https://cdn.ckeditor.com/4.16.2/standard/ckeditor.js"></script>
+<script>
+    // Initialize CKEditor if publisher
+    {% if is_publisher %}
+    CKEDITOR.replace('description', {
+        removeButtons: 'About',
+        height: '250px'
+    });
+    
+    window.addEventListener('DOMContentLoaded', (event) => {
+        const pubInput = document.getElementById('publish_date');
+        if (pubInput && !pubInput.value) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            pubInput.value = now.toISOString().slice(0, 16);
+        }
+    });
+    {% endif %}
+
+    function openNoticeModal(noticeId) {
+        document.getElementById('noticeModal').style.display = 'flex';
+        fetch('/announcements/view/' + noticeId)
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('modalNoticeContent').innerHTML = '<span style="color:red;">Error: ' + data.error + '</span>';
+                    return;
+                }
+                document.getElementById('modalNoticeTitle').innerText = data.title;
+                document.getElementById('modalNoticeAuthor').innerText = data.creator_name;
+                document.getElementById('modalNoticeRole').innerText = data.creator_role.toUpperCase();
+                document.getElementById('modalNoticeDate').innerText = data.publish_date;
+                document.getElementById('modalNoticeDept').innerText = data.department_id;
+                document.getElementById('modalNoticeContent').innerHTML = data.description;
+                
+                const priEl = document.getElementById('modalNoticePriority');
+                priEl.innerText = data.priority;
+                priEl.className = 'priority-badge ' + data.priority.toLowerCase();
+                
+                const attachContainer = document.getElementById('modalNoticeAttachmentContainer');
+                if (data.attachment) {
+                    attachContainer.style.display = 'block';
+                    const link = document.getElementById('modalNoticeAttachmentLink');
+                    link.href = '/announcements/file/' + data.attachment;
+                    link.innerText = 'Download file (' + data.attachment.split('_').slice(1).join('_') + ')';
+                } else {
+                    attachContainer.style.display = 'none';
+                }
+                
+                // Remove highlight on UI
+                const row = document.getElementById('notice-row-' + noticeId);
+                if (row && row.classList.contains('unread-highlight')) {
+                    row.classList.remove('unread-highlight');
+                    const dot = document.getElementById('new-dot-' + noticeId);
+                    if (dot) {
+                        const check = document.createElement('span');
+                        check.className = 'read-check';
+                        check.innerText = '✓';
+                        dot.parentNode.replaceChild(check, dot);
+                    }
+                    decrementBadge();
+                }
+            });
+    }
+
+    function closeNoticeModal() {
+        document.getElementById('noticeModal').style.display = 'none';
+    }
+
+    function openRosterModal(noticeId) {
+        const modal = document.getElementById('rosterModal-' + noticeId);
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    function closeRosterModal(noticeId) {
+        const modal = document.getElementById('rosterModal-' + noticeId);
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    function decrementBadge() {
+        const badge = document.getElementById('unread-dept-badge');
+        if (badge) {
+            let count = parseInt(badge.innerText);
+            if (count > 0) {
+                count--;
+                badge.innerText = count;
+                if (count === 0) badge.remove();
+            }
+        }
+    }
+
+    function switchTab(tabId, buttonEl) {
+        document.querySelectorAll('.tab-content-panel').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelectorAll('.nav-tab').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById(tabId).classList.add('active');
+        buttonEl.classList.add('active');
+    }
+
+    // Client-side search roster filtering
+    function filterRoster(noticeId) {
+        const input = document.getElementById('roster-search-' + noticeId);
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('roster-table-' + noticeId);
+        const trs = table.getElementsByClassName('roster-row');
+
+        for (let i = 0; i < trs.length; i++) {
+            const empIdText = trs[i].getElementsByClassName('emp-id-cell')[0].innerText.toLowerCase();
+            const nameText = trs[i].getElementsByClassName('emp-name-cell')[0].innerText.toLowerCase();
+            if (empIdText.includes(filter) || nameText.includes(filter)) {
+                trs[i].style.display = '';
+            } else {
+                trs[i].style.display = 'none';
+            }
+        }
+    }
+</script>
+
+<!-- ================= CSS STYLING ================= -->
+<style>
+.dept-notices-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.page-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.muted-text {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* ----- SUB-NAVBAR TABS ----- */
+.sub-navbar {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+
+.nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.nav-tab span {
+    font-size: 16px;
+}
+
+.nav-tab:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.nav-tab.active {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+/* ----- TAB PANELS ----- */
+.tab-content-panel {
+    display: none;
+}
+
+.tab-content-panel.active {
+    display: block;
+    animation: slideUp 0.3s ease-out;
+}
+
+/* ----- PREMIUM TABLE CARD ----- */
+.table-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.premium-table th {
+    background: #f8fafc;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.premium-table td {
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.premium-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.bold-text {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.notice-row.unread-highlight {
+    background: #f0f7ff !important;
+}
+.notice-row.unread-highlight:hover {
+    background: #e0efff !important;
+}
+
+.notice-row.critical-notice-row {
+    border-left: 4px solid #dc2626;
+}
+
+.new-dot {
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.read-check {
+    color: #10b981;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.pulsing-critical-icon {
+    display: inline-block;
+    animation: criticalPulse 1s infinite alternate;
+}
+
+.attachment-download-link {
+    font-size: 16px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    background: #f1f5f9;
+    color: #475569;
+}
+.role-badge.hod { background: #e0f2fe; color: #0369a1; }
+.role-badge.supervisor { background: #fef3c7; color: #d97706; }
+
+.priority-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.priority-badge.low { background: #f4f4f5; color: #71717a; }
+.priority-badge.medium { background: #eff6ff; color: #1d4ed8; }
+.priority-badge.high { background: #fff7ed; color: #ea580c; }
+.priority-badge.critical { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.status-badge.active { color: #15803d; }
+.status-badge.active .dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; }
+.status-badge.inactive { color: #71717a; }
+.status-badge.inactive .dot { width: 6px; height: 6px; background: #94a3b8; border-radius: 50%; }
+
+.btn-action {
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #1e293b;
+}
+.btn-action.view-details:hover {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+.btn-action.delete { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+.btn-action.delete:hover { background: #fecaca; }
+
+/* Roster Tracking Stat Cards */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.stat-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.stat-card .stat-num {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0f172a;
+}
+.stat-card .stat-lbl {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 4px;
+}
+.stat-card.viewed { background: #f0fdf4; border-color: #bbf7d0; }
+.stat-card.viewed .stat-num { color: #15803d; }
+.stat-card.pending { background: #fef2f2; border-color: #fecaca; }
+.stat-card.pending .stat-num { color: #b91c1c; }
+.stat-card.rate { background: #eff6ff; border-color: #bfdbfe; }
+.stat-card.rate .stat-num { color: #1d4ed8; }
+
+.view-status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.view-status-badge.viewed { background: #dcfce7; color: #15803d; }
+.view-status-badge.pending { background: #f3f4f6; color: #4b5563; }
+
+/* Form Card Styling */
+.form-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+    padding: 30px;
+}
+.form-row { display: flex; flex-wrap: wrap; margin-right: -10px; margin-left: -10px; }
+.form-group { margin-bottom: 20px; width: 100%; }
+.col-md-8 { width: 66.666667%; padding: 0 10px; }
+.col-md-4 { width: 33.333333%; padding: 0 10px; }
+.form-label { display: block; font-size: 14px; font-weight: 600; color: #334155; margin-bottom: 8px; }
+.form-control, .form-select {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: #1e293b;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-sizing: border-box;
+    transition: all 0.15s ease-in-out;
+}
+.form-control:focus, .form-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+.btn-submit {
+    padding: 11px 24px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-submit:hover { background: #1d4ed8; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+
+/* Modal overlays */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeInModal 0.3s ease-out;
+}
+.modal-card {
+    background: white;
+    width: 90%;
+    max-width: 650px;
+    border-radius: 14px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+.modal-header { background: #f8fafc; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+.modal-header h3 { margin: 0; font-size: 18px; font-weight: 700; color: #0f172a; }
+.modal-close-btn { background: none; border: none; font-size: 24px; font-weight: bold; cursor: pointer; color: #64748b; }
+.modal-body { padding: 24px; max-height: 400px; overflow-y: auto; }
+.modal-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; color: #475569; }
+.modal-content-html { font-size: 14px; color: #334155; line-height: 1.6; margin-top: 15px; }
+.modal-footer { background: #f8fafc; padding: 12px 24px; display: flex; justify-content: flex-end; border-top: 1px solid #e2e8f0; }
+.btn-close-modal { padding: 8px 16px; background: #64748b; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes criticalPulse { from { transform: scale(1); } to { transform: scale(1.15); } }
+</style>
+{% endblock %}

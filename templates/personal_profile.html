@@ -1,0 +1,295 @@
+{% extends "personal_info.html" %}
+
+{% block tab_content %}
+
+{% if request.args.get('saved') %}
+<div class="section-card" style="background: var(--success-bg); border-color: var(--success-color); padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="font-size: 14px; font-weight: 700; color: var(--success-color);">
+        ✅ Personal profile details have been saved and updated successfully in the database!
+    </div>
+    <a href="/user/personal/profile" style="font-size: 12px; color: var(--success-color); font-weight: 700; text-decoration: none;">✖ Close</a>
+</div>
+{% endif %}
+
+<!-- ===== COMPACT REGULAR PROFILE OVERVIEW ===== -->
+<div class="section-card">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
+        <div style="display: flex; align-items: center; gap: 18px;">
+            <div style="width: 58px; height: 58px; border-radius: 50%; background: var(--primary-color); color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 800; box-shadow: 0 4px 12px var(--primary-glow);">
+                {{ user[0][0] if user and user[0] else '👤' }}
+            </div>
+            <div>
+                <h2 style="font-size: 20px; font-weight: 800; color: var(--text-primary); margin: 0;">{{ user[0] if user else 'Employee Profile' }}</h2>
+                <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                    <span class="badge badge-info">{{ user[4] if user and user[4] else 'BHIPL Staff' }}</span>
+                    <span class="badge badge-success">{{ user[5] | upper if user and user[5] else 'USER' }}</span>
+                    <span class="badge badge-warning">EMP ID: {{ user[1] if user else 'EMP1001' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+            {% if details %}
+                <button type="button" class="btn-secondary" id="toggleDetailsBtn" onclick="toggleFullDetails()" style="font-size: 13px; padding: 8px 16px;">
+                    👁️ View Full 15-Field Record
+                </button>
+            {% endif %}
+            {% if can_data_entry %}
+                <button type="button" class="btn-primary" onclick="toggleDataEntryForm()" style="font-size: 13px; padding: 8px 16px;">
+                    ✏️ Update Personal Details
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Regular Compact Info (Shown by default on screen) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; background: var(--secondary-color); padding: 18px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <div>
+            <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Official Email</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">{{ user[2] if user and user[2] else 'Not provided' }}</div>
+        </div>
+        <div>
+            <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Primary Phone</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">{{ details.phone if details and details.phone else (user[3] if user and user[3] else 'Not provided') }}</div>
+        </div>
+        <div>
+            <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Blood Group</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--primary-color); margin-top: 2px;">{{ details.blood_group if details and details.blood_group else 'Not set' }}</div>
+        </div>
+        <div>
+            <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Emergency Contact</div>
+            <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-top: 2px;">
+                {{ details.emergency_name if details and details.emergency_name else 'Not set' }} 
+                {% if details and details.emergency_phone %}({{ details.emergency_phone }}){% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Collapsible Full 15-Field Records Table ("show less in the screen" by default) -->
+    {% if details %}
+    <div id="fullDetailsPanel" style="display: none; margin-top: 20px; animation: fadeIn 0.2s ease;">
+        <h3 style="font-size: 15px; font-weight: 800; color: var(--text-primary); margin-bottom: 12px;">Detailed Employee Profile Records</h3>
+        <div class="table-container">
+            <table class="premium-table">
+                <tbody>
+                    <tr>
+                        <th style="width: 220px;">Full Name</th>
+                        <td style="font-weight: 700;">{{ user[0] if user else '-' }}</td>
+                        <th style="width: 220px;">Employee ID</th>
+                        <td><span class="badge badge-info">{{ user[1] if user else '-' }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>Primary Phone</th>
+                        <td>{{ details.phone or '-' }}</td>
+                        <th>Alternate Phone</th>
+                        <td>{{ details.alt_phone or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Personal Email</th>
+                        <td>{{ details.personal_email or '-' }}</td>
+                        <th>Date of Birth</th>
+                        <td>{{ details.dob or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Blood Group</th>
+                        <td><span class="badge badge-danger">{{ details.blood_group or '-' }}</span></td>
+                        <th>Gender / Marital Status</th>
+                        <td>{{ details.gender or '-' }} / {{ details.marital_status or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Present Address</th>
+                        <td>{{ details.present_address or '-' }}</td>
+                        <th>Permanent Address</th>
+                        <td>{{ details.permanent_address or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Emergency Contact Person</th>
+                        <td>{{ details.emergency_name or '-' }} ({{ details.emergency_relation or 'Contact' }})</td>
+                        <th>Emergency Phone</th>
+                        <td style="font-weight: 700; color: var(--danger-color);">{{ details.emergency_phone or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Aadhaar / Govt ID No</th>
+                        <td>{{ details.aadhaar_no or '-' }}</td>
+                        <th>PAN Number</th>
+                        <td>{{ details.pan_no or '-' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Qualification / Education</th>
+                        <td>{{ details.qualification or '-' }}</td>
+                        <th>Bank Details</th>
+                        <td>{{ details.bank_name or '-' }} (A/C: {{ details.account_no or '-' }}, IFSC: {{ details.ifsc_code or '-' }})</td>
+                    </tr>
+                    <tr>
+                        <th>Last Updated At</th>
+                        <td colspan="3" style="font-size: 12px; color: var(--text-muted);">{{ details.updated_at or '-' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ===== 15-FIELD DATA ENTRY FORM (WHEN ENABLED BY ADMIN) ===== -->
+{% if can_data_entry %}
+<div class="section-card" id="dataEntryFormPanel" style="{% if details %}display: none;{% endif %} margin-top: 24px;">
+    <div style="margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border-color);">
+        <h3 style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0;">📝 Employee Personal Details Collection Form</h3>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 2px;">Data entry mode is enabled by Admin. Please provide your complete personal records below for HR database verification.</p>
+    </div>
+
+    <form action="/user/personal/save_profile" method="POST">
+        
+        <!-- SECTION 1: CONTACT DETAILS -->
+        <h4 style="font-size: 14px; font-weight: 800; color: var(--primary-color); margin-bottom: 14px; text-transform: uppercase;">1. Contact Details</h4>
+        <div class="form-grid" style="margin-bottom: 24px;">
+            <div class="form-group">
+                <label>Primary Contact Phone *</label>
+                <input type="text" name="phone" value="{{ details.phone if details else (user[3] if user else '') }}" placeholder="e.g. 9876543210" required>
+            </div>
+            <div class="form-group">
+                <label>Alternative Contact Phone</label>
+                <input type="text" name="alt_phone" value="{{ details.alt_phone if details else '' }}" placeholder="e.g. 9876500000">
+            </div>
+            <div class="form-group">
+                <label>Personal Email Address</label>
+                <input type="email" name="personal_email" value="{{ details.personal_email if details else '' }}" placeholder="e.g. name@gmail.com">
+            </div>
+        </div>
+
+        <!-- SECTION 2: PERSONAL & DEMOGRAPHICS -->
+        <h4 style="font-size: 14px; font-weight: 800; color: var(--primary-color); margin-bottom: 14px; text-transform: uppercase;">2. Personal & Demographics</h4>
+        <div class="form-grid" style="margin-bottom: 24px;">
+            <div class="form-group">
+                <label>Date of Birth</label>
+                <input type="date" name="dob" value="{{ details.dob if details else '' }}">
+            </div>
+            <div class="form-group">
+                <label>Blood Group</label>
+                <select name="blood_group">
+                    <option value="">Select Blood Group</option>
+                    {% for bg in ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] %}
+                        <option value="{{ bg }}" {% if details and details.blood_group == bg %}selected{% endif %}>{{ bg }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Gender</label>
+                <select name="gender">
+                    <option value="">Select Gender</option>
+                    <option value="Male" {% if details and details.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if details and details.gender == 'Female' %}selected{% endif %}>Female</option>
+                    <option value="Other" {% if details and details.gender == 'Other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Marital Status</label>
+                <select name="marital_status">
+                    <option value="">Select Status</option>
+                    <option value="Single" {% if details and details.marital_status == 'Single' %}selected{% endif %}>Single</option>
+                    <option value="Married" {% if details and details.marital_status == 'Married' %}selected{% endif %}>Married</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- SECTION 3: ADDRESS DETAILS -->
+        <h4 style="font-size: 14px; font-weight: 800; color: var(--primary-color); margin-bottom: 14px; text-transform: uppercase;">3. Residential Addresses</h4>
+        <div class="form-grid" style="margin-bottom: 24px;">
+            <div class="form-group full-width">
+                <label>Present Residential Address</label>
+                <textarea name="present_address" rows="2" placeholder="House No, Street, Landmark, City, Pincode">{{ details.present_address if details else '' }}</textarea>
+            </div>
+            <div class="form-group full-width">
+                <label>Permanent Residential Address</label>
+                <textarea name="permanent_address" rows="2" placeholder="Permanent Home Address">{{ details.permanent_address if details else '' }}</textarea>
+            </div>
+        </div>
+
+        <!-- SECTION 4: EMERGENCY CONTACT PERSON -->
+        <h4 style="font-size: 14px; font-weight: 800; color: var(--primary-color); margin-bottom: 14px; text-transform: uppercase;">4. Emergency Contact Person</h4>
+        <div class="form-grid" style="margin-bottom: 24px;">
+            <div class="form-group">
+                <label>Emergency Contact Person Name *</label>
+                <input type="text" name="emergency_name" value="{{ details.emergency_name if details else '' }}" placeholder="Father / Spouse / Kin Name" required>
+            </div>
+            <div class="form-group">
+                <label>Relationship</label>
+                <input type="text" name="emergency_relation" value="{{ details.emergency_relation if details else '' }}" placeholder="e.g. Father, Spouse, Brother">
+            </div>
+            <div class="form-group">
+                <label>Emergency Contact Phone *</label>
+                <input type="text" name="emergency_phone" value="{{ details.emergency_phone if details else '' }}" placeholder="e.g. 9876543210" required>
+            </div>
+        </div>
+
+        <!-- SECTION 5: IDENTITY & FINANCIAL -->
+        <h4 style="font-size: 14px; font-weight: 800; color: var(--primary-color); margin-bottom: 14px; text-transform: uppercase;">5. Identity & Financial Verification</h4>
+        <div class="form-grid" style="margin-bottom: 28px;">
+            <div class="form-group">
+                <label>Aadhaar / Government ID No</label>
+                <input type="text" name="aadhaar_no" value="{{ details.aadhaar_no if details else '' }}" placeholder="12-digit Aadhaar No">
+            </div>
+            <div class="form-group">
+                <label>PAN Card Number</label>
+                <input type="text" name="pan_no" value="{{ details.pan_no if details else '' }}" placeholder="10-digit PAN No">
+            </div>
+            <div class="form-group">
+                <label>Highest Qualification</label>
+                <input type="text" name="qualification" value="{{ details.qualification if details else '' }}" placeholder="e.g. B.E. Mechanical / Diploma">
+            </div>
+            <div class="form-group">
+                <label>Bank Name</label>
+                <input type="text" name="bank_name" value="{{ details.bank_name if details else '' }}" placeholder="e.g. HDFC Bank / SBI">
+            </div>
+            <div class="form-group">
+                <label>Bank Account Number</label>
+                <input type="text" name="account_no" value="{{ details.account_no if details else '' }}" placeholder="Account Number">
+            </div>
+            <div class="form-group">
+                <label>IFSC Code</label>
+                <input type="text" name="ifsc_code" value="{{ details.ifsc_code if details else '' }}" placeholder="e.g. HDFC0001234">
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            {% if details %}
+                <button type="button" class="btn-secondary" onclick="toggleDataEntryForm()">Cancel</button>
+            {% endif %}
+            <button type="submit" class="btn-primary" style="padding: 10px 28px;">
+                💾 Save & Submit Personal Records
+            </button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<script>
+    function toggleFullDetails() {
+        const panel = document.getElementById('fullDetailsPanel');
+        const btn = document.getElementById('toggleDetailsBtn');
+        if (!panel || !btn) return;
+
+        if (panel.style.display === 'none' || panel.style.display === '') {
+            panel.style.display = 'block';
+            btn.textContent = '🙈 Show Less';
+        } else {
+            panel.style.display = 'none';
+            btn.textContent = '👁️ View Full 15-Field Record';
+        }
+    }
+
+    function toggleDataEntryForm() {
+        const panel = document.getElementById('dataEntryFormPanel');
+        if (!panel) return;
+
+        if (panel.style.display === 'none' || panel.style.display === '') {
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+</script>
+
+{% endblock %}

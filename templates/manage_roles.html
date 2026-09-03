@@ -1,0 +1,565 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="user-mgmt-container">
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+        <div>
+            <h2>👥 Role Allocation & System Settings</h2>
+            <p class="muted-text">Allocate user roles, appoint Supervisors, and manage employee personal data entry rights.</p>
+        </div>
+        <!-- Global Personal Data Entry Control -->
+        <div class="section-card" style="margin: 0; padding: 14px 20px; display: flex; align-items: center; gap: 14px; background: var(--bg-card); border: 1px solid var(--border-color);">
+            <div>
+                <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Employee Data Entry Mode</div>
+                <div style="font-size: 13px; font-weight: 700; color: var(--text-primary);">
+                    Status: 
+                    {% if global_data_entry %}
+                        <span class="badge badge-success">Enabled (Collecting Details)</span>
+                    {% else %}
+                        <span class="badge badge-danger">Disabled</span>
+                    {% endif %}
+                </div>
+            </div>
+            <form action="/admin/toggle_global_data_entry" method="POST" style="margin: 0;">
+                <button type="submit" class="btn-primary" style="padding: 6px 14px; font-size: 12px;">
+                    ⚡ Toggle Global Entry Mode
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== INTERNAL SUB-NAVBAR ===== -->
+    <div class="sub-navbar">
+        <button class="nav-tab active" onclick="switchTab('users-tab', this)">
+            <span></span> User Accounts
+        </button>
+        <button class="nav-tab" onclick="switchTab('supervisor-tab', this)">
+            <span></span> Supervisors
+        </button>
+        <button class="nav-tab" onclick="switchTab('hod-tab', this)">
+            <span></span> Department Heads (HOD)
+        </button>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 1: ALL USERS -->
+    <!-- ============================================== -->
+    <div id="users-tab" class="tab-content-panel active">
+        <div class="table-card">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Data Entry</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td class="bold-text">{{ u.emp_id if u.emp_id else '-' }}</td>
+                        <td>{{ u.full_name }}</td>
+                        <td>{{ u.email }}</td>
+                        <td>
+                            <span class="dept-badge">{{ u.department if u.department else 'Not Assigned' }}</span>
+                        </td>
+                        <td>
+                            <form action="/admin/update_role/{{ u.id }}" method="POST" style="display: inline-block;">
+                                <select name="role" onchange="this.form.submit()" class="role-select">
+                                    <option value="user" {% if u.role == 'user' %}selected{% endif %}>User</option>
+                                    <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+                                    <option value="MD" {% if u.role == 'MD' %}selected{% endif %}>MD</option>
+                                    <option value="GM" {% if u.role == 'GM' %}selected{% endif %}>GM</option>
+                                    <option value="HR" {% if u.role == 'HR' %}selected{% endif %}>HR</option>
+                                </select>
+                            </form>
+                        </td>
+                        <td>
+                            {% if u.status == 'Active' %}
+                                <span class="status-badge active"><span class="dot"></span> Active</span>
+                            {% else %}
+                                <span class="status-badge idle"><span class="dot"></span> Idle</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form action="/admin/toggle_user_data_entry/{{ u.id }}" method="POST" style="margin: 0;">
+                                {% if u.data_entry_enabled %}
+                                    <button type="submit" class="btn-secondary" style="padding: 4px 10px; font-size: 11px; color: var(--success-color);" title="Click to disable for this user">
+                                        Allowed
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn-secondary" style="padding: 4px 10px; font-size: 11px; color: var(--danger-color);" title="Click to allow for this user">
+                                        Off
+                                    </button>
+                                {% endif %}
+                            </form>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                {% if u.role == "user" %}
+                                    {% if u.is_supervisor %}
+                                        <a href="/admin/remove_supervisor/{{ u.id }}" class="btn-action revoke-supervisor" onclick="return confirm('Revoke Supervisor status for {{ u.full_name }}?')" title="Remove as Supervisor">Revoke Supervisor</a>
+                                    {% else %}
+                                        <a href="/admin/make_supervisor/{{ u.id }}" class="btn-action make-supervisor" onclick="return confirm('Appoint {{ u.full_name }} as Supervisor?')" title="Make Supervisor">Make Supervisor</a>
+                                    {% endif %}
+                                    
+                                    {% if u.is_hod %}
+                                        <a href="/admin/remove_hod/{{ u.id }}" class="btn-action revoke-hod" onclick="return confirm('Revoke HOD status for {{ u.full_name }}?')" title="Remove as Department Head">Revoke HOD</a>
+                                    {% else %}
+                                        <a href="/admin/make_hod/{{ u.id }}" class="btn-action make-hod" onclick="return confirm('Appoint {{ u.full_name }} as Head of Department?')" title="Make Department Head">Make HOD</a>
+                                    {% endif %}
+                                    
+                                    <a href="/admin/logout_user/{{ u.id }}" class="btn-action logout" onclick="return confirm('Force logout {{ u.full_name }}?')" title="Terminate Session">Logout</a>
+                                {% else %}
+                                    <span class="muted-text">---</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: HOD LIST -->
+    <!-- ============================================== -->
+    <div id="hod-tab" class="tab-content-panel">
+        <div class="table-card">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Date Assigned</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in hods %}
+                    <tr class="{% if not h.is_active %}inactive-row{% endif %}">
+                        <td class="bold-text">{{ h.emp_id }}</td>
+                        <td>{{ h.name }}</td>
+                        <td>{{ h.email if h.email else '-' }}</td>
+                        <td>
+                            <span class="dept-badge hod">{{ h.department }}</span>
+                        </td>
+                        <td>
+                            {{ h.assigned_date.strftime("%d-%m-%Y") if h.assigned_date else '-' }}
+                        </td>
+                        <td>
+                            {% if h.is_active %}
+                                <span class="status-badge active"><span class="dot"></span> Active HOD</span>
+                            {% else %}
+                                <span class="status-badge idle"><span class="dot"></span> Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if h.is_active %}
+                                {% set matched_user = namespace(id=None) %}
+                                {% for u in users %}
+                                    {% if u.emp_id == h.emp_id %}
+                                        {% set matched_user.id = u.id %}
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if matched_user.id %}
+                                    <a href="/admin/remove_hod/{{ matched_user.id }}" class="btn-action revoke-hod" onclick="return confirm('Revoke HOD status for {{ h.name }}?')" title="Remove as Department Head">Revoke HOD</a>
+                                {% else %}
+                                    <span class="muted-text">---</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="muted-text">---</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="empty-state">No Department Heads assigned yet. Use the 'User Accounts' tab to appoint HODs.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: SUPERVISOR LIST -->
+    <!-- ============================================== -->
+    <div id="supervisor-tab" class="tab-content-panel">
+        <div class="table-card">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Date Assigned</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in supervisors %}
+                    <tr>
+                        <td class="bold-text">{{ s.emp_id }}</td>
+                        <td>{{ s.name }}</td>
+                        <td>{{ s.email if s.email else '-' }}</td>
+                        <td>
+                            <span class="dept-badge">{{ s.department }}</span>
+                        </td>
+                        <td>
+                            {{ s.assigned_date.strftime("%d-%m-%Y") if s.assigned_date else '-' }}
+                        </td>
+                        <td>
+                            {% set matched_user = namespace(id=None) %}
+                            {% for u in users %}
+                                {% if u.emp_id == s.emp_id %}
+                                    {% set matched_user.id = u.id %}
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if matched_user.id %}
+                                <a href="/admin/remove_supervisor/{{ matched_user.id }}" class="btn-action revoke-supervisor" onclick="return confirm('Revoke Supervisor status for {{ s.name }}?')" title="Remove as Supervisor">Revoke Supervisor</a>
+                            {% else %}
+                                <span class="muted-text">---</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="empty-state">No Supervisors assigned yet. Use the 'User Accounts' tab to appoint Supervisors.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CSS STYLING ================= -->
+<style>
+.user-mgmt-container {
+    width: 100%;
+    max-width: 100%;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.page-header {
+    margin-bottom: 25px;
+}
+
+.page-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.muted-text {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* ----- SUB-NAVBAR TABS ----- */
+.sub-navbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+
+.nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.nav-tab span {
+    font-size: 16px;
+}
+
+.nav-tab:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.nav-tab.active {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+/* ----- TAB PANELS ----- */
+.tab-content-panel {
+    display: none;
+}
+
+.tab-content-panel.active {
+    display: block;
+    animation: slideUp 0.3s ease-out;
+}
+
+/* ----- PREMIUM TABLE CARD ----- */
+.table-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.premium-table th {
+    background: #f8fafc;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.premium-table td {
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #1e293b;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.premium-table tbody tr:hover {
+    background: #f1f5f9;
+}
+
+.premium-table tbody tr.inactive-row {
+    background: #fafafa;
+    opacity: 0.7;
+}
+
+.bold-text {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/* ----- BADGES ----- */
+.dept-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 550;
+}
+
+.dept-badge.hod {
+    background: #faf5ff;
+    color: #6b21a8;
+    border: 1px solid #f3e8ff;
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.role-badge.admin {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.role-badge.user {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.active {
+    color: #15803d;
+}
+
+.status-badge.active .dot {
+    width: 7px;
+    height: 7px;
+    background: #22c55e;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px #22c55e;
+}
+
+.status-badge.idle {
+    color: #64748b;
+}
+
+.status-badge.idle .dot {
+    width: 7px;
+    height: 7px;
+    background: #94a3b8;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* ----- BUTTON ACTIONS ----- */
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 5px;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.btn-action.make-hod {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.btn-action.make-hod:hover {
+    background: #bbf7d0;
+}
+
+.btn-action.revoke-hod {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+.btn-action.revoke-hod:hover {
+    background: #fde68a;
+}
+
+.btn-action.make-supervisor {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.btn-action.make-supervisor:hover {
+    background: #bae6fd;
+}
+
+.btn-action.revoke-supervisor {
+    background: #fdf2f8;
+    color: #be185d;
+    border: 1px solid #fbcfe8;
+}
+
+.btn-action.revoke-supervisor:hover {
+    background: #fbcfe8;
+}
+
+.btn-action.logout {
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.btn-action.logout:hover {
+    background: #fecaca;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 30px !important;
+    color: #64748b;
+    font-style: italic;
+}
+
+/* ----- ANIMATIONS ----- */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.role-select {
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    font-size: 12px;
+    font-weight: 600;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+}
+
+.role-select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+</style>
+
+<!-- ================= JS TAB SWITCHING ================= -->
+<script>
+function switchTab(tabId, buttonEl) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content-panel').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    // Remove active class from buttons
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show target tab
+    document.getElementById(tabId).classList.add('active');
+    // Set active button
+    buttonEl.classList.add('active');
+}
+</script>
+{% endblock %}

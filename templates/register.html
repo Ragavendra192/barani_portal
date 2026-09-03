@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block auth_content %}
+<style>
+    body {
+        margin: 0;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 30px 20px;
+    }
+
+    .register-card-container {
+        width: 100%;
+        max-width: 520px;
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 24px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+        padding: 40px;
+        animation: cardAppear 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes cardAppear {
+        from { opacity: 0; transform: translateY(20px) scale(0.97); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .brand-header {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .brand-header img {
+        max-width: 100%;
+        height: auto;
+        max-height: 48px;
+        object-fit: contain;
+        margin-bottom: 12px;
+    }
+
+    .brand-header h1 {
+        font-size: 22px;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
+    }
+
+    .brand-header p {
+        font-size: 13px;
+        color: #64748b;
+        margin-top: 4px;
+    }
+
+    .form-grid-two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .form-group-custom {
+        margin-bottom: 16px;
+    }
+
+    .form-group-custom label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 6px;
+    }
+
+    .alert-error {
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        color: #991b1b;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+        transition: all 0.2s ease;
+        margin-top: 10px;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+    }
+
+    .card-footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    .card-footer a {
+        color: #6366f1;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .card-footer a:hover {
+        text-decoration: underline;
+    }
+
+    @media (max-width: 540px) {
+        .form-grid-two { grid-template-columns: 1fr; }
+    }
+</style>
+
+<div class="register-card-container">
+    <div class="brand-header">
+        <img src="{{ url_for('static', filename='images/BHIPL Logo.png') }}" alt="BHIPL Logo">
+        <h1>User Registration</h1>
+        <p>Create your BHIPL Operation Portal account</p>
+    </div>
+
+    {% if error %}
+        <div class="alert-error">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+        <div class="form-grid-two">
+            <div class="form-group-custom">
+                <label>Full Name *</label>
+                <input type="text" name="full_name" placeholder="John Doe" required>
+            </div>
+
+            <div class="form-group-custom">
+                <label>Employee ID *</label>
+                <input type="text" name="emp_id" placeholder="e.g. EMP102" required>
+            </div>
+        </div>
+
+        <div class="form-grid-two">
+            <div class="form-group-custom">
+                <label>Email Address *</label>
+                <input type="email" name="email" placeholder="john@barani.com" required>
+            </div>
+
+            <div class="form-group-custom">
+                <label>Phone Number *</label>
+                <input type="text" name="phone" placeholder="9876543210" required>
+            </div>
+        </div>
+
+        <div class="form-grid-two">
+            <div class="form-group-custom">
+                <label>Department *</label>
+                <select name="department" required>
+                    <option value="" disabled selected>-- Select Department --</option>
+                    <option value="IT">IT</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Quality checking">Quality checking</option>
+                    <option value="Production">Production</option>
+                    <option value="Purchase">Purchase</option>
+                    <option value="Sales & Marketing">Sales & Marketing</option>
+                    <option value="HR & Admin">HR & Admin</option>
+                    <option value="Finance & Accounts">Finance & Accounts</option>
+                    <option value="Design & R&D">Design & R&D</option>
+                    <option value="Maintenance">Maintenance</option>
+                </select>
+            </div>
+
+            <div class="form-group-custom">
+                <label>Date of Birth *</label>
+                <input type="date" name="dob" required>
+            </div>
+        </div>
+
+        <div class="form-grid-two">
+            <div class="form-group-custom">
+                <label>Password *</label>
+                <input type="password" name="password" placeholder="Set a secure password" required>
+            </div>
+
+            <div class="form-group-custom">
+                <label>Portal Role *</label>
+                <select name="role" required>
+                    {% if allow_admin %}
+                        <option value="admin">Admin</option>
+                    {% endif %}
+                    <option value="accounts">Accounts / Finance</option>
+                    <option value="user" selected>User (Employee)</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn">Register Account</button>
+    </form>
+
+    <div class="card-footer">
+        Already have an account? <a href="/login">Sign In here</a>
+        <div style="margin-top: 10px;">
+            <a href="/" style="color: #64748b; font-weight: 500;">← Back to Home Page</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

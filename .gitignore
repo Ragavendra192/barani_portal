@@ -1,0 +1,26 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Static Uploads / Temporary files
+static/uploads/receipts/*
+!static/uploads/receipts/.gitkeep
+test_outputs/
+*.log
+error_log.txt
+query_log.txt
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

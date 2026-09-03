@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="permissions-list-container">
+    <div class="page-header">
+        <h2>🔐 Application Permissions</h2>
+        <p class="muted-text">Overview of allowed application access per employee. Select configure to edit permissions.</p>
+    </div>
+
+    <div class="table-card">
+        <table class="premium-table">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Allowed Applications</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td class="bold-text">{{ u.emp_id if u.emp_id else '-' }}</td>
+                    <td>{{ u.full_name }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                        <span class="dept-badge">{{ u.department if u.department else 'Not Assigned' }}</span>
+                    </td>
+                    <td>
+                        <div class="apps-badges-container">
+                            {% for app in u.apps %}
+                                <span class="app-badge">{{ app }}</span>
+                            {% else %}
+                                <span class="no-apps-badge">No access granted</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="/admin/permissions/{{ u.id }}" class="btn-action permissions" title="Configure App Access">Configure Access</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= CSS STYLING ================= -->
+<style>
+.permissions-list-container {
+    width: 100%;
+    max-width: 100%;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.page-header {
+    margin-bottom: 25px;
+}
+
+.page-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.muted-text {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* ----- PREMIUM TABLE CARD ----- */
+.table-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.premium-table th {
+    background: #f8fafc;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.premium-table td {
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.premium-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.bold-text {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/* ----- BADGES ----- */
+.dept-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 550;
+}
+
+.apps-badges-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.app-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #dbeafe;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.no-apps-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #94a3b8;
+    border: 1px solid #e2e8f0;
+    font-size: 11px;
+    font-weight: 500;
+    font-style: italic;
+}
+
+/* ----- BUTTON ACTIONS ----- */
+.action-buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    display: inline-block;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.btn-action.permissions {
+    background: #f1f5f9;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
+}
+
+.btn-action.permissions:hover {
+    background: #e2e8f0;
+}
+
+/* ----- ANIMATIONS ----- */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
+{% endblock %}

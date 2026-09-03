@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="report-details-container">
+    <div class="page-header" style="margin-bottom: 25px; display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+            <a href="/announcements/reports" class="back-link">← Back to Reports</a>
+            <h2 style="margin-top: 10px;">📋 Audit & Read Details</h2>
+            <p class="muted-text">Detailed audit statistics for notice: <strong>{{ notice.title }}</strong></p>
+        </div>
+        <div class="notice-meta-card">
+            <div><strong>Audience:</strong> {{ notice.audience }}</div>
+            <div><strong>Published:</strong> {{ notice.publish_date.strftime("%d-%m-%Y %H:%M") }}</div>
+        </div>
+    </div>
+
+    <!-- Tabs for Read vs Unread -->
+    <div class="sub-navbar">
+        <button class="nav-tab active" onclick="switchTab('read-tab', this)">
+            <span>✅</span> Read Receipts ({{ reads|length }})
+        </button>
+        <button class="nav-tab" onclick="switchTab('unread-tab', this)">
+            <span>❌</span> Unread Employees ({{ unreads|length }})
+        </button>
+    </div>
+
+    <!-- TAB 1: Read Receipts -->
+    <div id="read-tab" class="tab-content-panel active" style="margin-top: 20px;">
+        <div class="table-card">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Read Date & Time</th>
+                        <th>IP Address</th>
+                        <th>Browser / Device Info</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reads %}
+                    <tr>
+                        <td class="bold-text">{{ r.emp_id }}</td>
+                        <td>{{ r.name }}</td>
+                        <td>{{ r.department if r.department else '-' }}</td>
+                        <td>{{ r.read_date.strftime("%d-%m-%Y %H:%M:%S") }}</td>
+                        <td><code>{{ r.ip }}</code></td>
+                        <td class="browser-info" title="{{ r.browser }}">{{ r.browser }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="empty-state">No read logs found. Nobody has viewed this announcement yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 2: Unread Employees -->
+    <div id="unread-tab" class="tab-content-panel" style="margin-top: 20px;">
+        <div class="table-card" style="max-width: 700px;">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in unreads %}
+                    <tr>
+                        <td class="bold-text">{{ u.emp_id }}</td>
+                        <td>{{ u.name }}</td>
+                        <td>{{ u.department if u.department else '-' }}</td>
+                        <td>
+                            <span class="status-badge pending"><span class="dot"></span> Targeted / Unread</span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="empty-state">All targeted employees have read this announcement!</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CSS STYLING ================= -->
+<style>
+.report-details-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.back-link {
+    color: #4b5563;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+.back-link:hover {
+    color: #111827;
+    text-decoration: underline;
+}
+
+.page-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.muted-text {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+.notice-meta-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.6;
+}
+
+/* ----- SUB-NAVBAR TABS ----- */
+.sub-navbar {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+
+.nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.nav-tab span {
+    font-size: 16px;
+}
+
+.nav-tab:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.nav-tab.active {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+/* ----- TAB PANELS ----- */
+.tab-content-panel {
+    display: none;
+}
+
+.tab-content-panel.active {
+    display: block;
+    animation: slideUp 0.3s ease-out;
+}
+
+/* ----- PREMIUM TABLE CARD ----- */
+.table-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.premium-table th {
+    background: #f8fafc;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.premium-table td {
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.premium-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.bold-text {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.browser-info {
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #64748b;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.status-badge.pending { color: #d97706; }
+.status-badge.pending .dot {
+    width: 6px;
+    height: 6px;
+    background: #fbbf24;
+    border-radius: 50%;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px !important;
+    color: #64748b;
+    font-style: italic;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+</style>
+
+<!-- ================= JS TAB SWITCHING ================= -->
+<script>
+function switchTab(tabId, buttonEl) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content-panel').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    // Remove active class from buttons
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show target tab
+    document.getElementById(tabId).classList.add('active');
+    // Set active button
+    buttonEl.classList.add('active');
+}
+</script>
+{% endblock %}

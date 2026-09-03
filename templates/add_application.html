@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="dashboard-header">
+    <div class="header-left">
+        <span class="badge-role">APPLICATION CONTROL</span>
+        <h1>Add Enterprise Application</h1>
+        <p class="subtitle">Register new software modules and IIS web applications to the portal launcher.</p>
+    </div>
+</div>
+
+<div class="section-card" style="max-width: 600px; margin-bottom: 32px;">
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label>Application Code *</label>
+            <input type="text" name="app_code" placeholder="e.g. APP01" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label>Application Name *</label>
+            <input type="text" name="app_name" placeholder="e.g. Reports Portal" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
+            <label>Application URL (IIS) *</label>
+            <input type="url" name="app_url" placeholder="http://localhost:5010" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label>Application Icon / Image</label>
+            <input type="file" name="app_image" accept="image/*">
+        </div>
+
+        <button type="submit" class="btn-primary" style="width: 100%;">
+            🚀 Register Application
+        </button>
+    </form>
+</div>
+
+{% if apps and apps|length > 0 %}
+<div class="section-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="font-size: 18px; font-weight: 800; color: var(--text-primary); margin: 0;">Configured Portal Applications</h3>
+        <span class="badge badge-info">{{ apps|length }} Configured</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+        {% for app in apps %}
+        <div style="background: #ffffff; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-sm);">
+            <div style="width: 56px; height: 56px; border-radius: 12px; overflow: hidden; background: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                {% if app[4] %}
+                    <img src="/static/images/{{ app[4] }}" alt="{{ app[2] }}" style="width: 100%; height: 100%; object-fit: contain;"/>
+                {% else %}
+                    <span style="color: var(--primary-color); font-weight: 800; font-size: 18px;">{{ app[1] }}</span>
+                {% endif %}
+            </div>
+            <div style="flex: 1;">
+                <div style="font-weight: 800; color: var(--text-primary); font-size: 15px;">{{ app[2] }} <span style="color: var(--text-muted); font-weight: 600; font-size: 12px;">({{ app[1] }})</span></div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px; word-break: break-all;">{{ app[3] }}</div>
+            </div>
+            <div>
+                <form method="POST" action="/admin/delete_app/{{ app[0] }}" onsubmit="return confirm('Delete application {{ app[2] }}? This cannot be undone.');">
+                    <button type="submit" class="btn-reject" style="padding: 6px 12px; font-size: 12px;">Delete</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,551 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hod-container">
+
+    <!-- ===== PAGE HEADER ===== -->
+    <div class="page-header">
+        <h2>🎓 Head of Department (HOD) Dashboard</h2>
+        <p class="muted-text">Welcome back, HOD <strong>{{ hod_name }}</strong>. Monitoring department leaves for <strong>{{ department }}</strong>.</p>
+    </div>
+
+    <!-- ===== FLASH MESSAGES ===== -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- ===== STATISTICS CARDS ===== -->
+    <div class="stats-grid">
+        <div class="stat-card pending">
+            <span class="icon">⌛</span>
+            <div class="details">
+                <h4>Pending Approvals</h4>
+                <p>{{ stats.pending }}</p>
+            </div>
+        </div>
+        <div class="stat-card approved">
+            <span class="icon">✔️</span>
+            <div class="details">
+                <h4>Approved Leaves</h4>
+                <p>{{ stats.approved }}</p>
+            </div>
+        </div>
+        <div class="stat-card rejected">
+            <span class="icon">❌</span>
+            <div class="details">
+                <h4>Rejected Leaves</h4>
+                <p>{{ stats.rejected }}</p>
+            </div>
+        </div>
+        <div class="stat-card total">
+            <span class="icon">📊</span>
+            <div class="details">
+                <h4>Total Department Requests</h4>
+                <p>{{ stats.total }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== DASHBOARD TABS ===== -->
+    <div class="sub-navbar">
+        <button class="nav-tab active" onclick="switchTab('pending-tab', this)">
+            <span>⏳</span> Pending HOD Approvals ({{ pending | length }})
+        </button>
+        <button class="nav-tab" onclick="switchTab('dept-history-tab', this)">
+            <span>📋</span> Department Leave Requests ({{ department_leaves | length }})
+        </button>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 1: PENDING HOD APPROVALS -->
+    <!-- ============================================== -->
+    <div id="pending-tab" class="tab-content-panel active">
+        <div class="table-card">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Leave Type</th>
+                        <th>Dates (From - To)</th>
+                        <th>Days</th>
+                        <th>Reason</th>
+                        <th>Supervisor Remarks</th>
+                        <th>Attachment</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in pending %}
+                    <tr class="pending-row">
+                        <td class="bold-text">{{ r.emp_id }}</td>
+                        <td>{{ r.name }}</td>
+                        <td class="bold-text text-primary">{{ r.leave_type }}</td>
+                        <td>
+                            <div class="date-badge">
+                                {{ r.from_date }} ➔ {{ r.to_date }}
+                            </div>
+                        </td>
+                        <td><strong>{{ r.total_days }}</strong></td>
+                        <td class="text-cell" title="{{ r.reason }}">{{ r.reason }}</td>
+                        <td class="text-cell supervisor-remarks" title="{{ r.sup_remarks }}">
+                            <em>{{ r.sup_remarks or 'None' }}</em>
+                        </td>
+                        <td>
+                            {% if r.attachment %}
+                                <a href="{{ url_for('static', filename=r.attachment) }}" target="_blank" class="badge-attachment">Download</a>
+                            {% else %}
+                                <span class="muted-text">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-box">
+                                <button class="btn-action approve-btn" onclick="openApprovalPanel({{ r.id }}, 'approve')">Approve</button>
+                                <button class="btn-action reject-btn" onclick="openApprovalPanel({{ r.id }}, 'reject')">Reject</button>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- HOD Action Drawer -->
+                    <tr id="drawer-{{ r.id }}" class="action-drawer" style="display:none;">
+                        <td colspan="9">
+                            <form id="form-{{ r.id }}" method="post" class="drawer-form">
+                                <div class="drawer-content">
+                                    <div class="form-group">
+                                        <label>Add HOD Remarks/Comments (Required for Rejections) <span class="req">*</span></label>
+                                        <textarea name="remarks" id="remarks-{{ r.id }}" rows="2" placeholder="Provide final remarks..."></textarea>
+                                    </div>
+                                    <div class="btn-group">
+                                        <button type="submit" id="btn-submit-{{ r.id }}" class="btn-action">Confirm Decision</button>
+                                        <button type="button" class="btn-action cancel-btn" onclick="closeApprovalPanel({{ r.id }})">Cancel</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="empty-state">No pending leave requests waiting for your final approval.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: DEPARTMENT LEAVE HISTORY -->
+    <!-- ============================================== -->
+    <div id="dept-history-tab" class="tab-content-panel">
+        <div class="table-card">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Applied On</th>
+                        <th>Emp ID</th>
+                        <th>Name</th>
+                        <th>Leave Type</th>
+                        <th>Duration (Days)</th>
+                        <th>Status</th>
+                        <th>SV Remarks</th>
+                        <th>HOD Remarks</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in department_leaves %}
+                    <tr>
+                        <td>{{ r.created_date }}</td>
+                        <td class="bold-text">{{ r.emp_id }}</td>
+                        <td>{{ r.name }}</td>
+                        <td>{{ r.leave_type }}</td>
+                        <td>{{ r.from_date }} to {{ r.to_date }} (<strong>{{ r.total_days }}</strong>)</td>
+                        <td>
+                            {% if r.status == 'Approved' %}
+                                <span class="badge success">Approved</span>
+                            {% elif r.status == 'Pending Supervisor Approval' %}
+                                <span class="badge warning">Pending SV</span>
+                            {% elif r.status == 'Pending HOD Approval' %}
+                                <span class="badge info">Pending HOD</span>
+                            {% else %}
+                                <span class="badge danger">{{ r.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-cell" title="{{ r.sup_remarks }}">{{ r.sup_remarks or '-' }}</td>
+                        <td class="text-cell" title="{{ r.hod_remarks }}">{{ r.hod_remarks or '-' }}</td>
+                        <td>
+                            <a href="/leave/download/{{ r.id }}" class="pdf-btn" title="Download PDF Form">Download PDF</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="empty-state">No leave applications found in this department.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= STYLE STYLING ================= -->
+<style>
+.hod-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* Page Header */
+.page-header {
+    margin-bottom: 25px;
+}
+.page-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 6px;
+}
+.muted-text {
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* Alert Styles */
+.alert {
+    padding: 12px 18px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+.alert-warning { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+
+/* Stat Cards */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+.stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+}
+.stat-card .icon {
+    font-size: 28px;
+    background: #f1f5f9;
+    padding: 10px;
+    border-radius: 10px;
+}
+.stat-card .details h4 {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+.stat-card .details p {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-top: 2px;
+}
+
+/* Sub Navbar Tabs */
+.sub-navbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+.nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+.nav-tab:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+.nav-tab.active {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+/* Tab Panels */
+.tab-content-panel {
+    display: none;
+}
+.tab-content-panel.active {
+    display: block;
+    animation: slideUp 0.3s ease-out;
+}
+
+/* Premium Table Card */
+.table-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+.premium-table th {
+    background: #f8fafc;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.premium-table td {
+    padding: 14px 18px;
+    font-size: 13.5px;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+.premium-table tbody tr:hover {
+    background: #f8fafc;
+}
+.bold-text {
+    font-weight: 600;
+    color: #0f172a;
+}
+.text-primary {
+    color: #2563eb !important;
+}
+
+/* Badges */
+.dept-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+}
+.date-badge {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #334155;
+    display: inline-block;
+}
+.badge-attachment {
+    background: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    padding: 4px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+}
+.badge-attachment:hover {
+    background: #dbeafe;
+}
+.pdf-btn {
+    display: inline-block;
+    background: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+.pdf-btn:hover {
+    background: #dcfce7;
+}
+.badge {
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+.badge.success { background: #dcfce7; color: #166534; }
+.badge.danger { background: #fee2e2; color: #991b1b; }
+.badge.info { background: #e0f2fe; color: #0369a1; }
+.badge.warning { background: #fef3c7; color: #b45309; }
+
+/* Text Cells */
+.text-cell {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.supervisor-remarks {
+    color: #4b5563;
+}
+
+/* Action Boxes */
+.action-box {
+    display: flex;
+    gap: 6px;
+}
+.btn-action {
+    display: inline-block;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+}
+.approve-btn {
+    background: #2563eb;
+    color: white;
+}
+.approve-btn:hover { background: #1d4ed8; }
+.reject-btn {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+.reject-btn:hover { background: #fecaca; }
+.cancel-btn {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #cbd5e1;
+}
+.cancel-btn:hover { background: #e2e8f0; }
+
+/* Action Drawers */
+.action-drawer {
+    background: #f8fafc;
+}
+.drawer-form {
+    padding: 15px 30px;
+}
+.drawer-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.drawer-content label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+    display: block;
+}
+.drawer-content textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    font-size: 13.5px;
+    outline: none;
+    resize: none;
+}
+.drawer-content textarea:focus {
+    border-color: #2563eb;
+}
+.drawer-content .btn-group {
+    display: flex;
+    gap: 8px;
+}
+.req { color: #ef4444; }
+.empty-state {
+    text-align: center;
+    padding: 30px !important;
+    color: #64748b;
+    font-style: italic;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes slideUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+</style>
+
+<!-- ================= JAVASCRIPT ================= -->
+<script>
+function switchTab(tabId, buttonEl) {
+    document.querySelectorAll('.tab-content-panel').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(tabId).classList.add('active');
+    buttonEl.classList.add('active');
+}
+
+function openApprovalPanel(leaveId, action) {
+    // Hide all other open drawers first
+    document.querySelectorAll('.action-drawer').forEach(drawer => {
+        drawer.style.display = 'none';
+    });
+
+    const drawer = document.getElementById('drawer-' + leaveId);
+    const form = document.getElementById('form-' + leaveId);
+    const remarks = document.getElementById('remarks-' + leaveId);
+    const submitBtn = document.getElementById('btn-submit-' + leaveId);
+
+    // Set form action based on HOD decision
+    form.action = '/hod/' + action + '/' + leaveId;
+
+    if (action === 'approve') {
+        remarks.required = false;
+        remarks.placeholder = "Optional approval remarks...";
+        submitBtn.className = "btn-action approve-btn";
+        submitBtn.innerText = "Confirm Approval";
+    } else {
+        remarks.required = true;
+        remarks.placeholder = "Provide reason for rejection (Required)...";
+        submitBtn.className = "btn-action reject-btn";
+        submitBtn.innerText = "Confirm Rejection";
+    }
+
+    drawer.style.display = 'table-row';
+}
+
+function closeApprovalPanel(leaveId) {
+    document.getElementById('drawer-' + leaveId).style.display = 'none';
+}
+</script>
+
+{% endblock %}

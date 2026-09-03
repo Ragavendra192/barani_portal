@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.launchPersistentApp) {
+            window.launchPersistentApp("{{ app_name }}", "{{ app_url }}", {{ app_id | default(0) }});
+        }
+    });
+</script>
+
+<div class="dashboard-header">
+    <div class="header-left">
+        <span class="badge-role">ACTIVE MODULE</span>
+        <h1>{{ app_name }}</h1>
+        <p class="subtitle">Application running in background mode. Use the header controls or dock bar to switch views.</p>
+    </div>
+</div>
+
+<div class="section-card" style="text-align: center; padding: 40px;">
+    <div style="font-size: 40px; margin-bottom: 12px;">📱</div>
+    <h3>{{ app_name }} is Active</h3>
+    <p style="color: var(--text-secondary); max-width: 480px; margin: 8px auto 20px;">
+        Your application is running. You can navigate through portal pages using the sidebar without closing your application session.
+    </p>
+    <div style="display: flex; justify-content: center; gap: 12px;">
+        <button type="button" onclick="restoreActiveApp()" class="btn-primary">▶ Resume Application Work</button>
+        <a href="/dashboard" class="btn-secondary" style="text-decoration: none;">Go to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

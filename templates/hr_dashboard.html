@@ -1,0 +1,777 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hr-dashboard-wrapper">
+    <!-- Header Block -->
+    <div class="dashboard-header">
+        <div class="header-left">
+            <span class="badge-role">HR DEPARTMENT</span>
+            <h1>HR Control Center</h1>
+            <p class="subtitle">Welcome to the Human Resources Dashboard. Manage employee attendance and access applications.</p>
+        </div>
+        <div class="header-right">
+            <div class="date-badge">
+                <span class="icon">📅</span>
+                <span id="current-date-lbl">Loading Date...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Panel -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">👥</div>
+            <div class="stat-info">
+                <h3>Logs for Selected Date</h3>
+                <p class="stat-value">{{ records | length if records else 0 }}</p>
+                <p class="stat-desc">Active check-ins</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">⚠️</div>
+            <div class="stat-info">
+                <h3>Late Check-ins</h3>
+                <p class="stat-value" style="color: #ef4444;">{{ total_late }}</p>
+                <p class="stat-desc">For selected date</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">✈️</div>
+            <div class="stat-info">
+                <h3>On Leave</h3>
+                <p class="stat-value" style="color: #f59e0b;">{{ total_leave }}</p>
+                <p class="stat-desc">For selected date</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Applications Section -->
+    <div class="section-card apps-section">
+        <h2>My Applications</h2>
+        <div class="apps-grid">
+            {% for app in apps %}
+            <a href="/launch/{{ app.id }}" class="app-card">
+                <div class="app-icon-wrapper">
+                    {% if app.app_image %}
+                        <img src="{{ url_for('static', filename='images/' ~ app.app_image) }}" alt="{{ app.app_name }}">
+                    {% else %}
+                        <div class="app-placeholder-icon">📂</div>
+                    {% endif %}
+                </div>
+                <h3>{{ app.app_name }}</h3>
+                <span class="btn-launch">Launch ➜</span>
+            </a>
+            {% else %}
+            <p class="no-data">No applications assigned yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Tabs Container -->
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('daily-tab', this)">📅 Daily Attendance & Late Logs</button>
+        <button class="tab-btn" onclick="switchTab('overall-tab', this)">📊 Overall Employee Summaries</button>
+    </div>
+
+    <!-- Tab 1: Daily Attendance -->
+    <div id="daily-tab" class="tab-pane active">
+        <div class="section-card attendance-section">
+            <div class="section-header">
+                <h2>Daily Attendance Logs</h2>
+                <form method="get" class="filter-form">
+                    <div class="form-group-filter">
+                        <label>Select Date:</label>
+                        <input type="date" name="date" value="{{ request.args.get('date','') }}">
+                        <button type="submit" class="btn-primary">Filter Date</button>
+                        {% if request.args.get('date') %}
+                            <a href="/hr/dashboard" class="btn-secondary">Reset</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+
+            {% if not request.args.get('date') %}
+            <div class="alert-info">
+                <span class="icon">💡</span>
+                <p>Displaying the latest 100 attendance logs. To check a specific date, select it from the filter above.</p>
+            </div>
+            {% endif %}
+
+            <div class="table-container">
+                <table class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Employee ID</th>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>In Time</th>
+                            <th>Out Time</th>
+                            <th>Duration (hrs)</th>
+                            <th>Late By</th>
+                            <th>Early By</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in records %}
+                        <tr class="{% if r.LateBy and r.LateBy > 0 %}row-warning{% endif %}">
+                            <td class="semi-bold">{{ r.AttendanceDate }}</td>
+                            <td><span class="emp-badge">{{ r.EmployeeId }}</span></td>
+                            <td>{{ r.EmployeeName }}</td>
+                            <td><span class="dept-badge">{{ r.Department }}</span></td>
+                            <td>
+                                {% if r.InTime %}
+                                    <span class="{% if r.LateBy and r.LateBy > 0 %}text-danger text-bold{% endif %}">{{ r.InTime }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ r.OutTime if r.OutTime else '-' }}</td>
+                            <td class="duration-cell">{{ r.Duration if r.Duration else '-' }}</td>
+                            <td>
+                                {% if r.LateBy and r.LateBy > 0 %}
+                                    <span class="badge badge-danger">{{ r.LateBy }} mins</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.EarlyBy and r.EarlyBy > 0 %}
+                                    <span class="badge badge-warning-soft">{{ r.EarlyBy }} mins</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.IsOnLeave %}
+                                    <span class="status-badge badge-warning">On Leave</span>
+                                {% elif r.WeeklyOff %}
+                                    <span class="status-badge badge-info">Weekly Off</span>
+                                {% elif r.Holiday %}
+                                    <span class="status-badge badge-success">Holiday</span>
+                                {% elif r.LateBy and r.LateBy > 0 %}
+                                    <span class="status-badge badge-danger">Late Arrival</span>
+                                {% else %}
+                                    <span class="status-badge badge-success-soft">Present</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="no-records">No attendance records found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Overall Employee Summaries -->
+    <div id="overall-tab" class="tab-pane">
+        <div class="section-card summary-section">
+            <div class="section-header">
+                <h2>Overall Attendance Aggregates</h2>
+                <div class="filter-form">
+                    <div class="form-group-filter">
+                        <label>Search Employee:</label>
+                        <input type="text" id="employeeSearchInput" placeholder="Name, ID or Dept..." onkeyup="filterOverallTable()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="premium-table" id="overallAttendanceTable">
+                    <thead>
+                        <tr>
+                            <th>Employee ID</th>
+                            <th>Name</th>
+                            <th>Department</th>
+                            <th>Total Logged Days</th>
+                            <th>Late Days</th>
+                            <th>Early Off Days</th>
+                            <th>On Leave Days</th>
+                            <th>Total Hours Worked</th>
+                            <th>Avg Daily Hours</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in overall_records %}
+                        <tr>
+                            <td><span class="emp-badge">{{ r.EmployeeId }}</span></td>
+                            <td class="semi-bold">{{ r.EmployeeName }}</td>
+                            <td><span class="dept-badge">{{ r.Department }}</span></td>
+                            <td class="duration-cell" style="color: #6366f1;">{{ r.TotalDays }}</td>
+                            <td>
+                                {% if r.TotalLateDays > 0 %}
+                                    <span class="badge badge-danger">{{ r.TotalLateDays }} days</span>
+                                {% else %}
+                                    <span class="badge badge-default">0 days</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.TotalEarlyDays > 0 %}
+                                    <span class="badge badge-warning-soft">{{ r.TotalEarlyDays }} days</span>
+                                {% else %}
+                                    <span class="badge badge-default">0 days</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.TotalLeaveDays > 0 %}
+                                    <span class="status-badge badge-warning">{{ r.TotalLeaveDays }} days</span>
+                                {% else %}
+                                    <span class="status-badge badge-default">0 days</span>
+                                {% endif %}
+                            </td>
+                            <td class="duration-cell">{{ r.TotalDuration }} hrs</td>
+                            <td class="duration-cell" style="color: #10b981;">{{ r.AvgDuration }} hrs</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="no-records">No employee summaries available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Set dynamic date in header
+        const d = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById("current-date-lbl").textContent = d.toLocaleDateString('en-US', options);
+    });
+
+    // Tab switching logic
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.classList.remove('active');
+        });
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
+    }
+
+    // Client-side search filtering for overall summaries table
+    function filterOverallTable() {
+        const input = document.getElementById("employeeSearchInput");
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById("overallAttendanceTable");
+        const tr = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            let match = false;
+            // Search in columns: ID (0), Name (1), Department (2)
+            for (let j = 0; j < 3; j++) {
+                const td = tr[i].getElementsByTagName("td")[j];
+                if (td) {
+                    const txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        match = true;
+                        break;
+                    }
+                }
+            }
+            if (match) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+</script>
+
+<style>
+:root {
+    --primary-color: #6366f1;
+    --primary-hover: #4f46e5;
+    --secondary-color: #f3f4f6;
+    --secondary-hover: #e5e7eb;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --border-color: #e5e7eb;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    --hover-shadow: 0 10px 30px rgba(99, 102, 241, 0.15);
+}
+
+.hr-dashboard-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 15px;
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.badge-role {
+    display: inline-block;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    margin-bottom: 8px;
+    letter-spacing: 0.8px;
+}
+
+.dashboard-header h1 {
+    font-size: 28px;
+    color: var(--text-primary);
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.dashboard-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.date-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: var(--card-shadow);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(0,0,0,0.02);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-icon {
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+}
+
+.stat-info h3 {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.stat-info .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-info .stat-desc {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.section-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(0,0,0,0.02);
+    margin-bottom: 30px;
+}
+
+.section-card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+}
+
+.apps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+}
+
+.app-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    background: #fafbfe;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+}
+
+.app-card:hover {
+    background: white;
+    border-color: var(--primary-color);
+    box-shadow: var(--hover-shadow);
+    transform: translateY(-5px);
+}
+
+.app-icon-wrapper {
+    width: 65px;
+    height: 65px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.app-icon-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.app-placeholder-icon {
+    font-size: 32px;
+}
+
+.app-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.app-card .btn-launch {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Tabs styles */
+.tabs-container {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.tab-btn {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.3s;
+}
+
+.tab-btn:hover {
+    color: var(--primary-color);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--primary-color);
+    border-radius: 3px;
+}
+
+.tab-pane {
+    display: none;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.filter-form {
+    display: flex;
+    align-items: center;
+}
+
+.form-group-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group-filter label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.form-group-filter input[type="date"],
+.form-group-filter input[type="text"] {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.form-group-filter input[type="text"] {
+    width: 220px;
+}
+
+.form-group-filter input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.btn-primary {
+    padding: 8px 16px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-secondary {
+    padding: 8px 16px;
+    background: var(--secondary-color);
+    color: var(--text-secondary);
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--secondary-hover);
+}
+
+.alert-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    color: #4338ca;
+    padding: 10px 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 13px;
+}
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.premium-table th, .premium-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+}
+
+.premium-table th {
+    background: #f8fafc;
+    color: var(--text-secondary);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.premium-table td {
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.premium-table tr:last-child td {
+    border-bottom: none;
+}
+
+.premium-table tr:hover {
+    background: #fafafc;
+}
+
+/* Row highlighting */
+.row-warning {
+    background: rgba(254, 243, 199, 0.25) !important;
+}
+
+.row-warning:hover {
+    background: rgba(254, 243, 199, 0.45) !important;
+}
+
+.semi-bold {
+    font-weight: 600;
+}
+
+.text-danger {
+    color: #ef4444;
+}
+
+.text-bold {
+    font-weight: 700;
+}
+
+.emp-badge {
+    background: #f3f4f6;
+    color: #374151;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.dept-badge {
+    background: #eff6ff;
+    color: #1e40af;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.duration-cell {
+    font-weight: 700;
+    color: #10b981;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.badge-warning-soft {
+    background: #fffbeb;
+    color: #b45309;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.badge-warning {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.badge-info {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.badge-success {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.badge-success-soft {
+    background: rgba(16, 185, 129, 0.08);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+.badge-default {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.no-records {
+    text-align: center;
+    color: #9ca3af;
+    padding: 30px !important;
+}
+
+.no-data {
+    color: #9ca3af;
+    text-align: center;
+    padding: 20px;
+    width: 100%;
+}
+</style>
+{% endblock %}

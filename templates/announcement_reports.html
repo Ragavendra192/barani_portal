@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="page-header" style="margin-bottom: 25px;">
+        <h2>📊 Announcement Analytics & Reports</h2>
+        <p class="muted-text">Analyze notice read statistics, review active vs expired counts, and check department engagement metrics.</p>
+    </div>
+
+    <!-- Metrics Cards Grid -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <h5>Total Announcements</h5>
+            <span>{{ total_notices }}</span>
+        </div>
+        <div class="metric-card">
+            <h5>Active Announcements</h5>
+            <span class="active-val">{{ active_notices }}</span>
+        </div>
+        <div class="metric-card">
+            <h5>Expired Announcements</h5>
+            <span class="expired-val">{{ expired_notices }}</span>
+        </div>
+        <div class="metric-card">
+            <h5>Overall Read Rate</h5>
+            <span class="rate-val">{{ overall_read_rate }}%</span>
+        </div>
+    </div>
+
+    <!-- Tabs for Reports -->
+    <div class="sub-navbar" style="margin-top: 30px;">
+        <button class="nav-tab active" onclick="switchTab('notices-tab', this)">
+            <span>📋</span> Notices Analytics
+        </button>
+        <button class="nav-tab" onclick="switchTab('departments-tab', this)">
+            <span>🏢</span> Department Engagement
+        </button>
+    </div>
+
+    <!-- TAB 1: Notices Analytics -->
+    <div id="notices-tab" class="tab-content-panel active" style="margin-top: 20px;">
+        <div class="table-card">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Priority</th>
+                        <th>Target Audience</th>
+                        <th>Publish Date</th>
+                        <th>Author</th>
+                        <th>Reads / Target</th>
+                        <th>Read Rate</th>
+                        <th style="text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for n in notices %}
+                    <tr>
+                        <td class="bold-text">{{ n.title }}</td>
+                        <td>{{ n.category }}</td>
+                        <td>
+                            <span class="priority-badge {{ n.priority.lower() }}">{{ n.priority }}</span>
+                        </td>
+                        <td>{{ n.audience }}</td>
+                        <td>{{ n.publish_date.strftime("%d-%m-%Y %H:%M") }}</td>
+                        <td>{{ n.creator }}</td>
+                        <td><strong>{{ n.reads }}</strong> / {{ n.targets }}</td>
+                        <td>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: {{ n.read_rate }}%;"></div>
+                                <span class="progress-text">{{ n.read_rate }}%</span>
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <a href="/announcements/reports/details/{{ n.id }}" class="btn-action">Detailed Logs</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="empty-state">No announcements recorded.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 2: Department Engagement -->
+    <div id="departments-tab" class="tab-content-panel" style="margin-top: 20px;">
+        <div class="table-card" style="max-width: 600px;">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Department</th>
+                        <th>Total Employees</th>
+                        <th>Cumulative Reads</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in dept_stats %}
+                    <tr>
+                        <td class="bold-text">{{ d.department }}</td>
+                        <td>{{ d.employees }}</td>
+                        <td><strong>{{ d.total_reads }}</strong></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="empty-state">No department statistics found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CSS STYLING ================= -->
+<style>
+.reports-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.page-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 6px 0;
+}
+
+.muted-text {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+/* ----- METRICS GRID ----- */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.metric-card {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+}
+
+.metric-card h5 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.metric-card span {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+}
+.metric-card span.active-val { color: #16a34a; }
+.metric-card span.expired-val { color: #dc2626; }
+.metric-card span.rate-val { color: #2563eb; }
+
+/* ----- SUB-NAVBAR TABS ----- */
+.sub-navbar {
+    display: flex;
+    gap: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 8px;
+}
+
+.nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.nav-tab span {
+    font-size: 16px;
+}
+
+.nav-tab:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.nav-tab.active {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+/* ----- TAB PANELS ----- */
+.tab-content-panel {
+    display: none;
+}
+
+.tab-content-panel.active {
+    display: block;
+    animation: slideUp 0.3s ease-out;
+}
+
+/* ----- PREMIUM TABLE CARD ----- */
+.table-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.premium-table th {
+    background: #f8fafc;
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    border-bottom: 1px solid #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.premium-table td {
+    padding: 14px 18px;
+    font-size: 14px;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.premium-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.bold-text {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+/* ----- PROGRESS BAR ----- */
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 150px;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #2563eb;
+    border-radius: 9999px;
+}
+
+.progress-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.priority-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+.priority-badge.low { background: #f4f4f5; color: #71717a; }
+.priority-badge.medium { background: #eff6ff; color: #1d4ed8; }
+.priority-badge.high { background: #fff7ed; color: #ea580c; }
+.priority-badge.critical { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+.btn-action {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #f1f5f9;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.btn-action:hover {
+    background: #e2e8f0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px !important;
+    color: #64748b;
+    font-style: italic;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+</style>
+
+<!-- ================= JS TAB SWITCHING ================= -->
+<script>
+function switchTab(tabId, buttonEl) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content-panel').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    // Remove active class from buttons
+    document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show target tab
+    document.getElementById(tabId).classList.add('active');
+    // Set active button
+    buttonEl.classList.add('active');
+}
+</script>
+{% endblock %}

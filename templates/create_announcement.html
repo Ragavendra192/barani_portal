@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="create-announcement-container">
+    <div class="page-header" style="margin-bottom: 25px;">
+        <h2>📣 {{ 'Edit' if notice else 'Create' }} Announcement</h2>
+        <p class="muted-text">Compose announcement content, configure file attachments, select targeting, and schedule publishing parameters.</p>
+    </div>
+
+    <div class="form-card">
+        <form method="POST" enctype="multipart/form-data">
+            
+            <!-- Grid 1: Basic Information -->
+            <div class="form-row">
+                <div class="form-group col-md-8">
+                    <label for="title" class="form-label">Notice Title</label>
+                    <input type="text" name="title" id="title" class="form-control" placeholder="Enter announcement heading" required value="{{ notice.title if notice else '' }}">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="category" class="form-label">Category</label>
+                    <select name="category" id="category" class="form-select" required>
+                        <option value="" disabled {{ 'selected' if not notice else '' }}>Select Category</option>
+                        <option value="General Information" {{ 'selected' if notice and notice.category == 'General Information' else '' }}>General Information</option>
+                        <option value="HR Announcement" {{ 'selected' if notice and notice.category == 'HR Announcement' else '' }}>HR Announcement</option>
+                        <option value="Department Notice" {{ 'selected' if notice and notice.category == 'Department Notice' else '' }}>Department Notice</option>
+                        <option value="Safety Notice" {{ 'selected' if notice and notice.category == 'Safety Notice' else '' }}>Safety Notice</option>
+                        <option value="Holiday Notice" {{ 'selected' if notice and notice.category == 'Holiday Notice' else '' }}>Holiday Notice</option>
+                        <option value="Maintenance Notice" {{ 'selected' if notice and notice.category == 'Maintenance Notice' else '' }}>Maintenance Notice</option>
+                        <option value="Emergency Alert" {{ 'selected' if notice and notice.category == 'Emergency Alert' else '' }}>Emergency Alert</option>
+                        <option value="Event" {{ 'selected' if notice and notice.category == 'Event' else '' }}>Event</option>
+                        <option value="Policy Update" {{ 'selected' if notice and notice.category == 'Policy Update' else '' }}>Policy Update</option>
+                    </select>
+                </div>
+
+                <div class="form-group col-md-4">
+                    <label for="priority" class="form-label">Priority</label>
+                    <select name="priority" id="priority" class="form-select" required>
+                        <option value="Low" {{ 'selected' if notice and notice.priority == 'Low' else '' }}>Low</option>
+                        <option value="Medium" {{ 'selected' if not notice or notice.priority == 'Medium' else '' }}>Medium</option>
+                        <option value="High" {{ 'selected' if notice and notice.priority == 'High' else '' }}>High</option>
+                        <option value="Critical" {{ 'selected' if notice and notice.priority == 'Critical' else '' }}>Critical</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Description (Rich Text Editor) -->
+            <div class="form-group">
+                <label for="description" class="form-label">Description / Content</label>
+                <textarea name="description" id="description" class="form-control" rows="8" placeholder="Type notice description here..." required>{{ notice.description if notice else '' }}</textarea>
+            </div>
+
+            <!-- Grid 2: Scheduling & Attachments -->
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="publish_date" class="form-label">Publish Date & Time</label>
+                    <input type="datetime-local" name="publish_date" id="publish_date" class="form-control" required value="{{ notice.publish_date if notice else '' }}">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="expiry_date" class="form-label">Expiry Date & Time (Optional)</label>
+                    <input type="datetime-local" name="expiry_date" id="expiry_date" class="form-control" value="{{ notice.expiry_date if notice else '' }}">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="attachment" class="form-label">Attachment (PDF, Doc, Excel, Image)</label>
+                    <input type="file" name="attachment" id="attachment" class="form-control">
+                    {% if notice and notice.attachment %}
+                        <small style="display:block; margin-top:5px; color:#475569;">
+                            Current file: <a href="/announcements/file/{{ notice.attachment }}" target="_blank">{{ notice.attachment }}</a>
+                        </small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr style="margin: 25px 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+            <!-- Grid 3: Audience Selector -->
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label for="audience_type" class="form-label bold-text">Target Audience</label>
+                <select name="audience_type" id="audience_type" class="form-select" onchange="toggleAudienceOptions()" required>
+                    <option value="Entire Company" {{ 'selected' if not notice or notice.audience_type == 'Entire Company' else '' }}>Entire Company</option>
+                    <option value="Specific Department" {{ 'selected' if notice and notice.audience_type == 'Specific Department' else '' }}>Specific Department</option>
+                    <option value="Multiple Departments" {{ 'selected' if notice and notice.audience_type == 'Multiple Departments' else '' }}>Multiple Departments</option>
+                    <option value="Selected Employees" {{ 'selected' if notice and notice.audience_type == 'Selected Employees' else '' }}>Selected Employees</option>
+                    <option value="Position Based" {{ 'selected' if notice and notice.audience_type == 'Position Based' else '' }}>Position Based</option>
+                </select>
+            </div>
+
+            <!-- Target Selection Options -->
+            <!-- Departments Checklist -->
+            <div id="target-departments" class="target-option-container" style="display: none;">
+                <label class="form-label">Select Department(s)</label>
+                <div class="checkbox-grid">
+                    {% for d in departments %}
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="departments" id="dept_{{ loop.index }}" value="{{ d }}" {% if selected_depts and d in selected_depts %}checked{% endif %}>
+                        <label for="dept_{{ loop.index }}">{{ d }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Employees Checklist -->
+            <div id="target-employees" class="target-option-container" style="display: none;">
+                <label class="form-label">Select Employee(s)</label>
+                <div class="checkbox-grid employees">
+                    {% for e in employees %}
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="employees" id="emp_{{ e.id }}" value="{{ e.id }}" {% if selected_users and e.id in selected_users %}checked{% endif %}>
+                        <label for="emp_{{ e.id }}">{{ e.name }} <span class="muted-text">({{ e.emp_id }} - {{ e.dept if e.dept else 'No Dept' }})</span></label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Positions Selector -->
+            <div id="target-positions" class="target-option-container" style="display: none;">
+                <label class="form-label">Select Position / Role(s)</label>
+                <div class="checkbox-grid">
+                    {% for p in positions %}
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="positions" id="pos_{{ p }}" value="{{ p }}" {% if selected_positions and p in selected_positions %}checked{% endif %}>
+                        <label for="pos_{{ p }}">{{ p | capitalize }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-actions" style="margin-top: 30px;">
+                <button type="submit" class="btn-submit">{{ 'Update' if notice else 'Publish' }} Announcement</button>
+                <a href="/announcements/manage" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Load CKEditor CDN -->
+<script src="https://cdn.ckeditor.com/4.16.2/standard/ckeditor.js"></script>
+<script>
+    // Initialize CKEditor
+    CKEDITOR.replace('description', {
+        removeButtons: 'About',
+        height: '250px'
+    });
+
+    // Dynamic scheduling default setup
+    window.addEventListener('DOMContentLoaded', (event) => {
+        const pubInput = document.getElementById('publish_date');
+        if (!pubInput.value) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            pubInput.value = now.toISOString().slice(0, 16);
+        }
+        toggleAudienceOptions();
+    });
+
+    // Toggle targeting selector sections based on audience type selection
+    function toggleAudienceOptions() {
+        const audType = document.getElementById('audience_type').value;
+        
+        // Hide all targets initially
+        document.getElementById('target-departments').style.display = 'none';
+        document.getElementById('target-employees').style.display = 'none';
+        document.getElementById('target-positions').style.display = 'none';
+        
+        // Disable targeted inputs by default to avoid submitting unneeded selections
+        toggleInputs('target-departments', true);
+        toggleInputs('target-employees', true);
+        toggleInputs('target-positions', true);
+        
+        if (audType === 'Specific Department' || audType === 'Multiple Departments') {
+            document.getElementById('target-departments').style.display = 'block';
+            toggleInputs('target-departments', false);
+        } else if (audType === 'Selected Employees') {
+            document.getElementById('target-employees').style.display = 'block';
+            toggleInputs('target-employees', false);
+        } else if (audType === 'Position Based') {
+            document.getElementById('target-positions').style.display = 'block';
+            toggleInputs('target-positions', false);
+        }
+    }
+
+    function toggleInputs(containerId, disable) {
+        const container = document.getElementById(containerId);
+        const inputs = container.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.disabled = disable;
+        });
+    }
+</script>
+
+<!-- ================= CSS STYLING ================= -->
+<style>
+.create-announcement-container {
+    max-width: 900px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.page-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 6px 0;
+}
+
+.muted-text {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+}
+
+.form-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+    padding: 30px;
+}
+
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -10px;
+    margin-left: -10px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.col-md-8 { width: 66.666667%; padding: 0 10px; }
+.col-md-4 { width: 33.333333%; padding: 0 10px; }
+
+.form-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 8px;
+}
+
+.form-control, .form-select {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #1e293b;
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-sizing: border-box;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control:focus, .form-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.bold-text {
+    font-weight: 700;
+}
+
+/* Checkbox Grid Styles */
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.checkbox-grid.employees {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    max-height: 250px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #2563eb;
+}
+
+.checkbox-item label {
+    font-size: 13px;
+    color: #475569;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-item span.muted-text {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+/* ----- FORM ACTIONS & BUTTONS ----- */
+.btn-submit {
+    padding: 11px 24px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-submit:hover {
+    background: #1d4ed8;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn-cancel {
+    display: inline-block;
+    padding: 11px 24px;
+    background: #ffffff;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    margin-left: 10px;
+}
+
+.btn-cancel:hover {
+    background: #f8fafc;
+    color: #1e293b;
+    border-color: #94a3b8;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+</style>
+{% endblock %}

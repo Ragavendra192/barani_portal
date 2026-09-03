@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="safety-wrapper">
+
+    <!-- ===== PAGE HEADER ===== -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+        <div>
+            <h1 style="font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 0;">🛡️ Company Safety & Zero Harm Guidelines</h1>
+            <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Industrial safety regulations, PPE standards, ERT procedures, and plant emergency helplines</p>
+        </div>
+        
+        <!-- Zero Harm KPI Badges -->
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <span class="badge badge-success" style="padding: 6px 14px; font-size: 12px;">🛡️ ZERO HARM OBJECTIVE</span>
+            <span class="badge badge-info" style="padding: 6px 14px; font-size: 12px;">🦺 100% PPE MANDATORY</span>
+            <span class="badge badge-warning" style="padding: 6px 14px; font-size: 12px;">🚨 24/7 ERT COVERAGE</span>
+        </div>
+    </div>
+
+    <!-- ===== EFFICIENT 2-COLUMN SPACE LAYOUT ===== -->
+    <div style="display: grid; grid-template-columns: minmax(320px, 1fr) 1.2fr; gap: 20px; align-items: start;">
+        
+        <!-- LEFT COLUMN: SAFETY DIRECTIVES SELECTOR LIST -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="section-card" style="margin: 0; padding: 14px 18px; background: var(--bg-card);">
+                <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">
+                    Select Safety Instruction Document
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    
+                    <!-- Item 1: PPE -->
+                    <div class="safety-item-btn active" data-title="Personal Safety Equipment & PPE Rules" data-img="{{ url_for('static', filename='images/per_saf.png') }}" data-desc="Mandatory helmet, safety shoes, eye protection, and high-visibility jackets for shop floor staff.">
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: #d1fae5; color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            🦺
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 13px; font-weight: 800; color: var(--text-primary);">Personal Safety PPE & Helmet Rules</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Mandatory PPE gear on shop floor</div>
+                        </div>
+                    </div>
+
+                    <!-- Item 2: Machine Rules -->
+                    <div class="safety-item-btn" data-title="Machine Operation & Training Standard Rules" data-img="{{ url_for('static', filename='images/machine rules.png') }}" data-desc="Operational guidelines for hydraulic presses, CNC machines, and overhead cranes.">
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            ⚙️
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 13px; font-weight: 800; color: var(--text-primary);">Machine Operation Standard Rules</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Hydraulic press & crane operation protocols</div>
+                        </div>
+                    </div>
+
+                    <!-- Item 3: Fabrication Safety -->
+                    <div class="safety-item-btn" data-title="Fabrication Department Safety Instructions" data-img="{{ url_for('static', filename='images/rules.jpeg') }}" data-desc="Welding safety, gas cylinder handling, grinding protection, and fire hazard precautions.">
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: #fef3c7; color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            🏗️
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 13px; font-weight: 800; color: var(--text-primary);">Fabrication Department Safety Rules</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Welding, gas cylinder & grinding guidelines</div>
+                        </div>
+                    </div>
+
+                    <!-- Item 4: Emergency Response -->
+                    <div class="safety-item-btn" data-title="Company Emergency Response Team (ERT)" data-img="{{ url_for('static', filename='images/emergency response.png') }}" data-desc="Emergency evacuation steps, fire warden contacts, and first-aid response team.">
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: #fee2e2; color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            🚨
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 13px; font-weight: 800; color: var(--text-primary);">Emergency Response Team (ERT)</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Evacuation & first-aid warden procedures</div>
+                        </div>
+                    </div>
+
+                    <!-- Item 5: Factory Site Plan -->
+                    <div class="safety-item-btn" data-title="Unit-1 Factory Site Layout Plan" data-img="{{ url_for('static', filename='images/bhipl site plan.jpg') }}" data-desc="Factory layout, assembly bays, emergency exit routes, and assembly points.">
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: #f3e8ff; color: #9333ea; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            🗺️
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 13px; font-weight: 800; color: var(--text-primary);">Unit-1 Factory Site Layout Plan</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Assembly bays, exit doors & assembly points</div>
+                        </div>
+                    </div>
+
+                    <!-- Item 6: Emergency Contacts -->
+                    <div class="safety-item-btn" data-title="Emergency Contacts & Helpline Numbers" data-img="{{ url_for('static', filename='images/emergencynum_image.png') }}" data-desc="Plant medical officer, fire department, police, and internal safety officer numbers.">
+                        <div style="width: 38px; height: 38px; border-radius: 8px; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;">
+                            📞
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-size: 13px; font-weight: 800; color: var(--text-primary);">Emergency Contacts & Helplines</div>
+                            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">Plant safety officer & medical helpline numbers</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: LIVE SAFETY INSPECTOR & DOCUMENT VIEWER -->
+        <div class="section-card" style="margin: 0; padding: 20px; background: var(--bg-card); display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+                <div>
+                    <div style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Live Document Viewer</div>
+                    <h3 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 2px 0 0 0;" id="activeDocTitle">Personal Safety Equipment & PPE Rules</h3>
+                </div>
+                <button type="button" class="btn-secondary" onclick="expandActiveDoc()" style="padding: 6px 14px; font-size: 12px; font-weight: 700;">
+                    🔍 Expand Fullscreen
+                </button>
+            </div>
+
+            <div style="font-size: 13px; color: var(--text-secondary);" id="activeDocDesc">
+                Mandatory helmet, safety shoes, eye protection, and high-visibility jackets for shop floor staff.
+            </div>
+
+            <!-- EMBEDDED IMAGE PREVIEW CONTAINER -->
+            <div style="width: 100%; border-radius: var(--radius-md); overflow: hidden; background: var(--bg-canvas); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; min-height: 380px; position: relative;">
+                <img id="activeDocImg" src="{{ url_for('static', filename='images/per_saf.png') }}" alt="Safety Instruction Poster" style="width: 100%; max-height: 480px; object-fit: contain; cursor: pointer; transition: transform 0.2s ease;" onclick="expandActiveDoc()">
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ===== FULLSCREEN LIGHTBOX MODAL ===== -->
+<div id="safetyLightbox" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.9); z-index: 3000; align-items: center; justify-content: center; padding: 30px;">
+    <div style="position: relative; max-width: 90%; max-height: 90%; background: var(--bg-card); padding: 16px; border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 16px; font-weight: 800; color: var(--text-primary); margin: 0;" id="modalLightboxTitle">Safety Document View</h3>
+            <button type="button" onclick="closeLightbox()" style="background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer;">✖</button>
+        </div>
+        <img id="modalLightboxImg" src="" alt="Safety Document Detail" style="max-width: 100%; max-height: 75vh; object-fit: contain;">
+    </div>
+</div>
+
+<style>
+.safety-item-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    background: var(--bg-canvas);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.safety-item-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+}
+
+.safety-item-btn.active {
+    background: var(--primary-light);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-glow);
+}
+</style>
+
+<script>
+    let currentDocUrl = "{{ url_for('static', filename='images/per_saf.png') }}";
+    let currentDocTitle = "Personal Safety Equipment & PPE Rules";
+
+    document.querySelectorAll('.safety-item-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.safety-item-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            currentDocTitle = this.getAttribute('data-title');
+            currentDocUrl = this.getAttribute('data-img');
+            const desc = this.getAttribute('data-desc');
+
+            document.getElementById('activeDocTitle').textContent = currentDocTitle;
+            document.getElementById('activeDocDesc').textContent = desc;
+            document.getElementById('activeDocImg').src = currentDocUrl;
+        });
+    });
+
+    function expandActiveDoc() {
+        document.getElementById('modalLightboxTitle').textContent = currentDocTitle;
+        document.getElementById('modalLightboxImg').src = currentDocUrl;
+        document.getElementById('safetyLightbox').style.display = 'flex';
+    }
+
+    function closeLightbox() {
+        document.getElementById('safetyLightbox').style.display = 'none';
+    }
+</script>
+
+{% endblock %}

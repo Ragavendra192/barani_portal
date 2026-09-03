@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | BHIPL Operation Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card-container {
+            width: 100%;
+            max-width: 440px;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            padding: 40px;
+            animation: cardAppear 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(20px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .brand-header img {
+            max-width: 100%;
+            height: auto;
+            max-height: 48px;
+            object-fit: contain;
+            margin-bottom: 16px;
+        }
+
+        .brand-header h1 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .brand-header p {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .form-group-custom {
+            margin-bottom: 18px;
+        }
+
+        .form-group-custom label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+
+        .password-field-wrapper {
+            position: relative;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 15px;
+            user-select: none;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+        }
+
+        .card-footer {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .card-footer a {
+            color: #6366f1;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .card-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card-container">
+    <div class="brand-header">
+        <img src="{{ url_for('static', filename='images/BHIPL Logo.png') }}?v=3" alt="BHIPL Logo" style="max-height: 54px;">
+    </div>
+
+    {% if request.args.get("idle") %}
+        <div style="background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; padding: 12px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; margin-bottom: 20px; text-align: center;">
+            ⏳ You have been logged out due to inactivity. Please sign in again to continue.
+        </div>
+    {% endif %}
+
+    {% if error %}
+        <div class="alert-error">⚠️ {{ error }}</div>
+    {% endif %}
+
+    <form action="/login" method="POST">
+        <div class="form-group-custom">
+            <label>Employee ID</label>
+            <input type="text" name="emp_id" placeholder="e.g. EMP102" required autofocus>
+        </div>
+
+        <div class="form-group-custom">
+            <label>Password</label>
+            <div class="password-field-wrapper">
+                <input type="password" name="password" id="loginPassword" placeholder="Enter your password" required>
+                <span class="password-toggle-btn" onclick="togglePassword()">👁</span>
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn">Sign In</button>
+    </form>
+
+    <div class="card-footer">
+        New employee? <a href="/register">Register account</a>
+        <div style="margin-top: 12px;">
+            <a href="/" style="color: #64748b; font-weight: 500; font-size: 13px;">← Back to Home Page</a>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword() {
+    const input = document.getElementById("loginPassword");
+    const icon = event.target;
+    if (input.type === "password") {
+        input.type = "text";
+        icon.textContent = "🙈";
+    } else {
+        input.type = "password";
+        icon.textContent = "👁";
+    }
+}
+</script>
+
+</body>
+</html>

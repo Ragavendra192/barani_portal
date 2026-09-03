@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+{% block content %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<div class="hr-dashboard-wrapper">
+    <div class="dashboard-header">
+        <div class="header-left">
+            <span class="badge-role">HR DEPARTMENT</span>
+            <h1>Visitor Reports</h1>
+            <p class="subtitle">Overview of visitor logs and statistics.</p>
+        </div>
+        <div class="header-right">
+            <a href="/visitor/hr/approvals" class="btn-secondary" style="padding: 10px 20px;">Back to Approvals</a>
+        </div>
+    </div>
+
+    <!-- Stats Panel -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">📅</div>
+            <div class="stat-info">
+                <h3>Today's Visitors</h3>
+                <p class="stat-value" style="color: #6366f1;">{{ stats.today }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">⏳</div>
+            <div class="stat-info">
+                <h3>Pending Approval</h3>
+                <p class="stat-value" style="color: #f59e0b;">{{ stats.pending }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">✅</div>
+            <div class="stat-info">
+                <h3>Approved</h3>
+                <p class="stat-value" style="color: #10b981;">{{ stats.approved }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">❌</div>
+            <div class="stat-info">
+                <h3>Rejected</h3>
+                <p class="stat-value" style="color: #ef4444;">{{ stats.rejected }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">🏢</div>
+            <div class="stat-info">
+                <h3>Inside Company</h3>
+                <p class="stat-value" style="color: #3b82f6;">{{ stats.inside }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Table Section -->
+    <div class="section-card attendance-section">
+        <div class="section-header">
+            <h2>Visitor Log</h2>
+            <form action="/visitor/hr/reports" method="GET" class="filter-form">
+                <div class="form-group-filter">
+                    <label>From:</label>
+                    <input type="date" name="date_from" value="{{ filters.get('date_from', '') }}">
+                    
+                    <label style="margin-left: 10px;">To:</label>
+                    <input type="date" name="date_to" value="{{ filters.get('date_to', '') }}">
+                    
+                    <label style="margin-left: 10px;">Status:</label>
+                    <select name="status" style="padding: 8px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <option value="">All Statuses</option>
+                        <option value="Pending HR Approval" {% if filters.get('status') == 'Pending HR Approval' %}selected{% endif %}>Pending</option>
+                        <option value="Approved" {% if filters.get('status') == 'Approved' %}selected{% endif %}>Approved</option>
+                        <option value="Entered" {% if filters.get('status') == 'Entered' %}selected{% endif %}>Inside</option>
+                        <option value="Exited" {% if filters.get('status') == 'Exited' %}selected{% endif %}>Exited</option>
+                        <option value="Rejected" {% if filters.get('status') == 'Rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
+                    
+                    <button type="submit" class="btn-primary" style="margin-left: 10px;">Filter</button>
+                    <a href="/visitor/hr/reports" class="btn-secondary" style="margin-left: 5px;">Clear</a>
+                </div>
+            </form>
+            
+            <div style="margin-top: 15px;">
+                <button onclick="exportExcel()" class="btn-secondary" style="background: #10b981; color: white;">Export Excel</button>
+                <button onclick="exportPDF()" class="btn-secondary" style="background: #ef4444; color: white; margin-left: 10px;">Export PDF</button>
+            </div>
+        </div>
+
+        <div class="table-container" id="reportContent">
+            <table id="visitorTable" class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Visitor Name</th>
+                        <th>Company</th>
+                        <th>To Meet</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Actual In</th>
+                        <th>Actual Out</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td class="semi-bold">{{ req.VisitorName }}</td>
+                        <td>{{ req.CompanyName or '-' }}</td>
+                        <td>{{ req.EmployeeToMeet }}</td>
+                        <td>{{ req.VisitDate.strftime('%Y-%m-%d') if req.VisitDate else '-' }}</td>
+                        <td>
+                            {% if req.Status == 'Approved' %}
+                                <span class="status-badge badge-success">Approved</span>
+                            {% elif req.Status == 'Entered' %}
+                                <span class="status-badge badge-info">Inside</span>
+                            {% elif req.Status == 'Exited' %}
+                                <span class="status-badge badge-default">Exited</span>
+                            {% elif req.Status == 'Rejected' %}
+                                <span class="status-badge badge-danger">Rejected</span>
+                            {% else %}
+                                <span class="status-badge badge-warning">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ req.ActualInTime.strftime('%Y-%m-%d %H:%M:%S') if req.ActualInTime else '-' }}</td>
+                        <td>{{ req.ActualOutTime.strftime('%Y-%m-%d %H:%M:%S') if req.ActualOutTime else '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="no-records">No records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportExcel() {
+    var table = document.getElementById("visitorTable");
+    var wb = XLSX.utils.table_to_book(table, {sheet:"Visitor Report"});
+    XLSX.writeFile(wb, "Visitor_Report.xlsx");
+}
+
+function exportPDF() {
+    var element = document.getElementById('reportContent');
+    var opt = {
+      margin:       0.5,
+      filename:     'Visitor_Report.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'in', format: 'letter', orientation: 'landscape' }
+    };
+    html2pdf().set(opt).from(element).save();
+}
+</script>
+
+<style>
+/* Base Dashboard Styles shared with HR Dashboard */
+:root {
+    --primary-color: #6366f1;
+    --primary-hover: #4f46e5;
+    --secondary-color: #f3f4f6;
+    --secondary-hover: #e5e7eb;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --border-color: #e5e7eb;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.hr-dashboard-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 15px;
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.badge-role {
+    display: inline-block;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    margin-bottom: 8px;
+    letter-spacing: 0.8px;
+}
+
+.dashboard-header h1 {
+    font-size: 28px;
+    color: var(--text-primary);
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.dashboard-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(0,0,0,0.02);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-icon {
+    font-size: 24px;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+}
+
+.stat-info h3 {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.stat-info .stat-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.section-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(0,0,0,0.02);
+    margin-bottom: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.filter-form {
+    display: flex;
+    align-items: center;
+}
+
+.form-group-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group-filter label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.form-group-filter input[type="date"],
+.form-group-filter input[type="text"] {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.btn-primary {
+    padding: 8px 16px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-secondary {
+    padding: 8px 16px;
+    background: var(--secondary-color);
+    color: var(--text-secondary);
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--secondary-hover);
+}
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.premium-table th, .premium-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+}
+
+.premium-table th {
+    background: #f8fafc;
+    color: var(--text-secondary);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.premium-table td {
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.premium-table tr:hover {
+    background: #fafafc;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.badge-warning { background: #fef3c7; color: #d97706; }
+.badge-info { background: #dbeafe; color: #2563eb; }
+.badge-success { background: #d1fae5; color: #059669; }
+.badge-danger { background: #fee2e2; color: #b91c1c; }
+.badge-default { background: #f3f4f6; color: #6b7280; }
+.semi-bold { font-weight: 600; }
+.no-records { text-align: center; color: #9ca3af; padding: 30px !important; }
+</style>
+
+{% endblock %}

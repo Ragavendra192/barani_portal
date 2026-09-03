@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2 style="margin-bottom: 20px;">📊 Employee Attendance (Admin)</h2>
+
+<!-- ===== Date Filter ===== -->
+<form method="get" style="margin-bottom: 20px;">
+    <label style="font-weight: 600;">Filter by Date:</label>
+    <input type="date" name="date" value="{{ request.args.get('date','') }}">
+    <button type="submit" class="btn">Filter</button>
+    <a href="/admin/attendance" class="btn btn-secondary">Reset</a>
+</form>
+
+{% if not request.args.get('date') %}
+<p style="color: #6b7280; font-size: 13px; margin-bottom: 15px;">💡 Showing the latest 100 attendance records. To view records for another date, use the filter above.</p>
+{% endif %}
+
+<!-- ===== Attendance Table ===== -->
+<div style="overflow-x:auto;">
+<table class="table">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Employee ID</th>
+            <th>In Time</th>
+            <th>Out Time</th>
+            <th>Duration</th>
+            <th>Late By</th>
+            <th>Early By</th>
+            <th>Leave</th>
+            <th>Weekly Off</th>
+            <th>Holiday</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in records %}
+        <tr>
+            <td>{{ r.AttendanceDate }}</td>
+            <td>{{ r.EmployeeId }}</td>
+            <td>{{ r.InTime if r.InTime else '-' }}</td>
+            <td>{{ r.OutTime if r.OutTime else '-' }}</td>
+            <td>{{ r.Duration }}</td>
+            <td>{{ r.LateBy }}</td>
+            <td>{{ r.EarlyBy }}</td>
+            <td>
+                {% if r.IsOnLeave %}
+                    <span class="badge badge-warning">Yes</span>
+                {% else %}
+                    No
+                {% endif %}
+            </td>
+            <td>
+                {% if r.WeeklyOff %}
+                    <span class="badge badge-info">Yes</span>
+                {% else %}
+                    No
+                {% endif %}
+            </td>
+            <td>
+                {% if r.Holiday %}
+                    <span class="badge badge-success">Yes</span>
+                {% else %}
+                    No
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="10" style="text-align:center;">No attendance records found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<!-- ===== Styles ===== -->
+<style>
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.table th, .table td {
+    padding: 10px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+    text-align: center;
+}
+
+.table th {
+    background: #111827;
+    color: #fff;
+}
+
+.table tr:nth-child(even) {
+    background: #f9fafb;
+}
+
+.btn {
+    padding: 6px 12px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.btn-secondary {
+    background: #6b7280;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    color: white;
+}
+
+.badge-warning {
+    background: #f59e0b;
+}
+
+.badge-info {
+    background: #3b82f6;
+}
+
+.badge-success {
+    background: #10b981;
+}
+</style>
+
+{% endblock %}

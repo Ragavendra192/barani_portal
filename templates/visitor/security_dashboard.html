@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="hr-dashboard-wrapper">
+    <div class="dashboard-header">
+        <div class="header-left">
+            <span class="badge-role">SECURITY PANEL</span>
+            <h1>Security Dashboard</h1>
+            <p class="subtitle">Monitor and log entry and exit of approved visitors.</p>
+        </div>
+        <div class="header-right">
+            <a href="/visitor/security/request" class="btn-primary" style="padding: 10px 20px;">+ New Visitor Request</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div style="background: #eef2ff; border: 1px solid #c7d2fe; color: #4338ca; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; font-weight: 500;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="section-card attendance-section">
+        <div class="section-header">
+            <h2>Today's Visitors</h2>
+        </div>
+
+        <div class="table-container">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Pass No</th>
+                        <th>Visitor Name</th>
+                        <th>Company</th>
+                        <th>To Meet</th>
+                        <th>Status</th>
+                        <th>Expected In</th>
+                        <th>Actual In</th>
+                        <th>Actual Out</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in requests %}
+                    <tr>
+                        <td><strong>{{ req.PassNumber or '-' }}</strong></td>
+                        <td class="semi-bold">{{ req.VisitorName }}</td>
+                        <td>{{ req.CompanyName or '-' }}</td>
+                        <td>{{ req.EmployeeToMeet }}</td>
+                        <td>
+                            {% if req.Status == 'Approved' %}
+                                <span class="status-badge badge-success">Approved</span>
+                            {% elif req.Status == 'Entered' %}
+                                <span class="status-badge badge-info">Inside</span>
+                            {% elif req.Status == 'Exited' %}
+                                <span class="status-badge badge-default">Exited</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ req.ExpectedInTime or '-' }}</td>
+                        <td>{{ req.ActualInTime.strftime('%I:%M %p') if req.ActualInTime else '-' }}</td>
+                        <td>{{ req.ActualOutTime.strftime('%I:%M %p') if req.ActualOutTime else '-' }}</td>
+                        <td>
+                            {% if req.Status == 'Approved' %}
+                                <form action="/visitor/security/entry" method="POST" style="display: flex; gap: 5px; align-items: center;">
+                                    <input type="hidden" name="request_id" value="{{ req.RequestID }}">
+                                    <input type="text" name="gate_no" placeholder="Gate No" style="width: 80px; padding: 6px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 12px;" required>
+                                    <button type="submit" class="btn-primary" style="background: #10b981; padding: 6px 12px;">Mark In</button>
+                                </form>
+                            {% elif req.Status == 'Entered' %}
+                                <form action="/visitor/security/exit" method="POST">
+                                    <input type="hidden" name="request_id" value="{{ req.RequestID }}">
+                                    <button type="submit" class="btn-primary" style="background: #f59e0b; padding: 6px 12px;">Mark Out</button>
+                                </form>
+                            {% else %}
+                                <button class="btn-secondary" style="padding: 6px 12px; cursor: not-allowed;" disabled>Done</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="no-records">No visitors found for today.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Using HR Dashboard Styles */
+:root {
+    --primary-color: #6366f1;
+    --primary-hover: #4f46e5;
+    --secondary-color: #f3f4f6;
+    --secondary-hover: #e5e7eb;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --border-color: #e5e7eb;
+    --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.hr-dashboard-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px 15px;
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+}
+
+.badge-role {
+    display: inline-block;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    margin-bottom: 8px;
+    letter-spacing: 0.8px;
+}
+
+.dashboard-header h1 {
+    font-size: 28px;
+    color: var(--text-primary);
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.dashboard-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.section-card {
+    background: white;
+    border-radius: 16px;
+    padding: 25px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(0,0,0,0.02);
+    margin-bottom: 30px;
+}
+
+.section-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 20px;
+}
+
+.btn-primary {
+    padding: 8px 16px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-decoration: none;
+}
+
+.btn-secondary {
+    padding: 8px 16px;
+    background: var(--secondary-color);
+    color: var(--text-secondary);
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.premium-table th, .premium-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.premium-table th {
+    background: #f8fafc;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.premium-table tr:hover {
+    background: #fafafc;
+}
+
+.semi-bold { font-weight: 600; }
+.status-badge { display: inline-block; padding: 4px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+.badge-info { background: #dbeafe; color: #2563eb; }
+.badge-success { background: #d1fae5; color: #059669; }
+.badge-default { background: #f3f4f6; color: #6b7280; }
+.no-records { text-align: center; color: #9ca3af; padding: 30px !important; }
+</style>
+
+{% endblock %}

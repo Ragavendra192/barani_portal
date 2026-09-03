@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BHIPL Operation Portal | Barani Hydraulics India Pvt Ltd</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Home Landing Page Custom Styles */
+        .home-navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 72px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        }
+
+        .home-nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .home-nav-brand img {
+            height: 48px;
+            object-fit: contain;
+        }
+
+        .home-nav-brand h1 {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: 0.5px;
+            margin: 0;
+        }
+
+        .home-nav-right .btn-login-hero {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: #ffffff;
+            padding: 10px 24px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+            transition: all 0.25s ease;
+        }
+
+        .home-nav-right .btn-login-hero:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+        }
+
+        .home-hero-section {
+            margin-top: 72px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #ffffff;
+            padding: 80px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .home-hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, rgba(0, 0, 0, 0) 70%);
+            pointer-events: none;
+        }
+
+        .hero-badge-tag {
+            display: inline-block;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: #a5b4fc;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .home-hero-section h1 {
+            font-size: 44px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .home-hero-section p {
+            font-size: 18px;
+            color: #94a3b8;
+            max-width: 720px;
+            margin: 0 auto 36px;
+            line-height: 1.6;
+        }
+
+        .hero-stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .hero-stat-pill {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px 28px;
+            text-align: center;
+        }
+
+        .hero-stat-pill h3 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #6366f1;
+            margin-bottom: 2px;
+        }
+
+        .hero-stat-pill p {
+            font-size: 13px;
+            color: #cbd5e1;
+            margin: 0;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 24px;
+        }
+
+        .content-card-section {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 40px;
+        }
+
+        .section-header-title {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .about-text p {
+            font-size: 15px;
+            color: #475569;
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-top: 32px;
+        }
+
+        .gallery-item-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .gallery-item-img:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+        }
+
+        .mission-vision-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 28px;
+            margin-bottom: 40px;
+        }
+
+        .mv-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 32px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mv-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+            background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        .mv-card h2 {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mv-card p {
+            font-size: 15px;
+            color: #475569;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        .safety-section-card {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e2e8f0;
+        }
+
+        .safety-grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 24px;
+        }
+
+        .safety-card-item {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .safety-card-item:hover {
+            background: #ffffff;
+            border-color: #6366f1;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.12);
+            color: #6366f1;
+        }
+
+        .safety-icon-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        /* Lightbox Viewer */
+        .safety-viewer-modal {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .safety-viewer-modal.hidden { display: none; }
+
+        .viewer-backdrop-bg {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .viewer-modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 85vh;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            z-index: 10000;
+        }
+
+        .viewer-modal-content img {
+            max-width: 100%;
+            max-height: 75vh;
+            border-radius: 12px;
+            display: block;
+        }
+
+        .btn-modal-close {
+            position: absolute;
+            top: -16px;
+            right: -16px;
+            width: 38px;
+            height: 38px;
+            background: #ef4444;
+            color: #ffffff;
+            border: none;
+            border-radius: 50%;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .page-footer-bar {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 32px;
+            text-align: center;
+            font-size: 14px;
+            border-top: 1px solid #1e293b;
+        }
+
+        .page-footer-bar a {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOP NAVIGATION BAR -->
+<header class="home-navbar">
+    <div class="home-nav-brand">
+        <img src="{{ url_for('static', filename='images/BHIPL Logo.png') }}" alt="BHIPL Logo">
+    </div>
+
+    <div class="home-nav-right">
+        <a href="/login" class="btn-login-hero">🔑 Portal Sign In</a>
+    </div>
+</header>
+
+<!-- HERO SECTION -->
+<section class="home-hero-section">
+    <span class="hero-badge-tag">BHIPL Operation Portal</span>
+    <h1>Building Safe, Smart & Strong Industrial Operations</h1>
+    <p>Pioneering high-quality customized hydraulic presses and automated industrial manufacturing solutions worldwide for over two decades.</p>
+
+    <a href="/login" class="btn-login-hero" style="font-size: 16px; padding: 14px 36px; display: inline-block;">Access Portal</a>
+
+    <div class="hero-stats-row">
+        <div class="hero-stat-pill">
+            <h3>1200+</h3>
+            <p>Hydraulic Presses Delivered</p>
+        </div>
+        <div class="hero-stat-pill">
+            <h3>20+ Years</h3>
+            <p>Industrial Excellence</p>
+        </div>
+        <div class="hero-stat-pill">
+            <h3>120+</h3>
+            <p>Sectors Served Globally</p>
+        </div>
+    </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<div class="main-container">
+
+    <!-- ABOUT SECTION -->
+    <div class="content-card-section">
+        <h2 class="section-header-title">🏢 About Our Organization</h2>
+        <div class="about-text">
+            <p><strong>BARANI HYDRAULICS INDIA PRIVATE LTD (BHIPL)</strong> is committed to safety, efficiency, and excellence in industrial operations.</p>
+            <p>With continuous support provided by leading corporate customers in India, BHIPL has stepped into the global market, manufacturing customized hydraulic presses conforming to international standards like JIS B6403 Grade-I, CE European Safety Standards, PILZ safety standards, NR-12 Brazilian standards, and UL, NEMA (USA) standards.</p>
+            <p>Barani Hydraulics is recognized as a strategic global supplier for top-tier manufacturing companies across the USA, UK, and Europe for sensitive industrial automation projects.</p>
+        </div>
+
+        <div class="gallery-grid">
+            <img src="{{ url_for('static', filename='images/b1.jpg') }}" class="gallery-item-img" alt="Plant Operations 1">
+            <img src="{{ url_for('static', filename='images/b2.jpg') }}" class="gallery-item-img" alt="Plant Operations 2">
+            <img src="{{ url_for('static', filename='images/b3.jpg') }}" class="gallery-item-img" alt="BHIPL Team">
+            <img src="{{ url_for('static', filename='images/b4.jpg') }}" class="gallery-item-img" alt="Plant Machinery">
+        </div>
+    </div>
+
+    <!-- MISSION & VISION -->
+    <div class="mission-vision-container">
+        <div class="mv-card">
+            <h2>🎯 Our Mission</h2>
+            <p>We, dedicated BHIPL team members, serve society by manufacturing and supplying customer-satisfying solutions with innovative technology and uncompromising quality standards.</p>
+        </div>
+
+        <div class="mv-card">
+            <h2>🌟 Our Vision</h2>
+            <p>BHIPL will be a pioneer in carving quality into every hydraulic machine we build, establishing a global benchmark through our sustained presence and dedicated customer service.</p>
+        </div>
+    </div>
+
+    <!-- SAFETY INSTRUCTIONS -->
+    <div class="safety-section-card">
+        <h2 class="section-header-title">🛡️ General Safety Guidelines</h2>
+        <p style="font-size: 14px; color: #64748b; margin-top: -12px;">Click any guideline below to view detailed safety documentation.</p>
+
+        <div class="safety-grid-cards">
+            <div class="safety-card-item safety-card" role="button" tabindex="0" data-img="{{ url_for('static', filename='images/per_saf.png') }}">
+                <div class="safety-icon-badge">🦺</div>
+                <span>Personal Safety Equipment & Helmet Rules</span>
+            </div>
+
+            <div class="safety-card-item safety-card" role="button" tabindex="0" data-img="{{ url_for('static', filename='images/machine rules.png') }}">
+                <div class="safety-icon-badge">⚙️</div>
+                <span>Machine Operation & Training Standard Rules</span>
+            </div>
+
+            <div class="safety-card-item safety-card" role="button" tabindex="0" data-img="{{ url_for('static', filename='images/rules.jpeg') }}">
+                <div class="safety-icon-badge">🏗️</div>
+                <span>Fabrication Department Safety Instructions</span>
+            </div>
+
+            <div class="safety-card-item safety-card" role="button" tabindex="0" data-img="{{ url_for('static', filename='images/emergency response.png') }}">
+                <div class="safety-icon-badge">🚨</div>
+                <span>Company Emergency Response Team (ERT)</span>
+            </div>
+
+            <div class="safety-card-item safety-card" role="button" tabindex="0" data-img="{{ url_for('static', filename='images/bhipl site plan.jpg') }}">
+                <div class="safety-icon-badge">🗺️</div>
+                <span>Unit-1 Factory Site Layout Plan</span>
+            </div>
+
+            <div class="safety-card-item safety-card" role="button" tabindex="0" data-img="{{ url_for('static', filename='images/emergencynum_image.png') }}">
+                <div class="safety-icon-badge">📞</div>
+                <span>Emergency Contacts & Helpline Numbers</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- LIGHTBOX MODAL VIEWER -->
+<div id="safety-viewer" class="safety-viewer-modal hidden" aria-hidden="true">
+    <div class="viewer-backdrop-bg" id="viewer-backdrop"></div>
+    <div class="viewer-modal-content" role="dialog" aria-modal="true">
+        <button id="safety-close" class="btn-modal-close" aria-label="Close">×</button>
+        <img id="safety-image" src="" alt="Safety detail">
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="page-footer-bar">
+    <p>© 2025 Barani Hydraulics India Private Ltd (BHIPL) | All Rights Reserved</p>
+</footer>
+
+<script>
+(function(){
+    const viewer = document.getElementById('safety-viewer');
+    const img = document.getElementById('safety-image');
+    const closeBtn = document.getElementById('safety-close');
+    const backdrop = document.getElementById('viewer-backdrop');
+
+    function openViewer(src, alt){
+        if(!src) return;
+        img.src = src;
+        img.alt = alt || 'Safety detail';
+        viewer.classList.remove('hidden');
+        viewer.setAttribute('aria-hidden','false');
+    }
+
+    function closeViewer(){
+        viewer.classList.add('hidden');
+        viewer.setAttribute('aria-hidden','true');
+        img.src = '';
+    }
+
+    document.querySelectorAll('.safety-card').forEach(card=>{
+        card.addEventListener('click', ()=> openViewer(card.dataset.img, card.textContent.trim()));
+        card.addEventListener('keypress', (e)=> { if(e.key==='Enter' || e.key===' ') openViewer(card.dataset.img, card.textContent.trim());});
+    });
+
+    if(closeBtn) closeBtn.addEventListener('click', closeViewer);
+    if(backdrop) backdrop.addEventListener('click', closeViewer);
+    document.addEventListener('keydown', (e)=> { if(e.key==='Escape') closeViewer(); });
+})();
+</script>
+
+</body>
+</html>

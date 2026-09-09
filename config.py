@@ -5,10 +5,10 @@ class Config:
 
     # ==================================================
     # CENTRAL IDLE TIMEOUT CONFIGURATION
-    # Change IDLE_TIMEOUT_MINUTES here to adjust company-wide policy (e.g. 1, 5, 10, 15)
+    # Change IDLE_TIMEOUT_MINUTES here to adjust company-wide policy (e.g. 480 = 8 hours full shift)
     # ==================================================
-    IDLE_TIMEOUT_MINUTES = 10
-    IDLE_WARNING_SECONDS = 60
+    IDLE_TIMEOUT_MINUTES = 480
+    IDLE_WARNING_SECONDS = 120
     PERMANENT_SESSION_LIFETIME_DAYS = 7
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"

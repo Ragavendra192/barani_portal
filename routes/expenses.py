@@ -359,7 +359,9 @@ def user_expenses():
             v.visited_company, v.sent_back_reason, v.rejection_reason,
             v.voucher_type, v.hod_approved_at, v.hod_remarks
         FROM dbo.user_trip_vouchers v
-        WHERE v.user_id = ? OR v.emp_id = ?
+        WHERE (v.user_id = ? OR v.emp_id = ?)
+          AND v.status NOT IN ('SETTLED', 'CLOSED')
+          AND (v.user_cleared IS NULL OR v.user_cleared = 0)
         ORDER BY v.created_at DESC
     """, (user_id, emp_id))
 
@@ -377,11 +379,18 @@ def user_expenses():
 
         fin = get_trip_financials(cur, trip_id)
 
+        usr_msg = purpose if (purpose and purpose.strip() and purpose.strip().lower() not in ['internal expense', 'bhipl expense', 'general expense']) else ""
+
         vouchers.append({
             'trip_id': trip_id,
             'voucher_id': voucher_id,
+            'user_id': user_id,
+            'emp_id': emp_id,
+            'employee_name': full_name,
+            'department': department,
             'visited_company': visited_company,
             'purpose': purpose,
+            'user_message': usr_msg,
             'date': start_date,
             'voucher_type': voucher_type,
             'total_expenses': fin['total_expenses'],
@@ -390,7 +399,10 @@ def user_expenses():
             'status': status,
             'status_label': fin['status_label'],
             'sub_label': fin['sub_label'],
-            'submitted_at': r[11].strftime("%d-%m-%Y %I:%M %p") if isinstance(r[11], datetime) else ""
+            'rejection_reason': (r[16] or r[19] or r[9] or "") if status == 'REJECTED' else "",
+            'sent_back_reason': (r[15] or r[19] or r[9] or "") if status == 'SENT_BACK' else "",
+            'hod_remarks': r[19] or "",
+            'accounts_remarks': r[9] or ""
         })
 
     carry_forward_info = get_user_carry_forward(cur, user_id, emp_id)
@@ -528,7 +540,7 @@ def get_voucher_details_api(trip_id):
     rejected_by_role = "HOD" if not hod_approved_at_str else "Accounts"
 
     cur.execute("""
-        SELECT TOP 1 actor_role, actor_name
+        SELECT TOP 1 actor_role, actor_name, comments
         FROM dbo.voucher_approval_history
         WHERE (trip_id = ? OR voucher_id = ?) AND action_type = 'REJECTED'
         ORDER BY history_id DESC
@@ -550,7 +562,7 @@ def get_voucher_details_api(trip_id):
             rejected_by_name = usr_r[0]
 
     rejected_at_str = r[28].strftime("%d-%m-%Y %I:%M %p") if isinstance(r[28], datetime) else ""
-    rejection_reason = r[17] or r[26] or r[13] or ""
+    rejection_reason = r[17] or (rej_hist_row[2] if (rej_hist_row and rej_hist_row[2]) else "") or r[26] or r[13] or ""
 
     # Fetch Approval & Rejection History Audit Trail
     cur.execute("""
@@ -571,6 +583,15 @@ def get_voucher_details_api(trip_id):
             'created_at': h_date_str
         })
 
+    cur.execute("""
+        SELECT TOP 1 comments
+        FROM dbo.voucher_approval_history
+        WHERE (trip_id = ? OR voucher_id = ?) AND action_type IN ('SUBMITTED', 'RESUBMITTED')
+        ORDER BY history_id DESC
+    """, (real_trip_id, real_trip_id))
+    sub_cmt_row = cur.fetchone()
+    user_message = sub_cmt_row[0] if (sub_cmt_row and sub_cmt_row[0] and sub_cmt_row[0] not in ['Initial Submission', 'Resubmitted for approval', 'Resubmitted by creator after correcting details']) else ""
+
     voucher_data = {
         'trip_id': r[0],
         'voucher_id': r[1],
@@ -579,6 +600,7 @@ def get_voucher_details_api(trip_id):
         'employee_name': r[4] or session.get("full_name", "Employee"),
         'department': r[5] or session.get("department", "SERVICE"),
         'purpose': r[6] or "Internal Expense",
+        'user_message': user_message,
         'visited_company': r[15] or r[8] or "BHIPL Expense",
         'start_date': r[9].strftime("%Y-%m-%d") if isinstance(r[9], datetime) else str(r[9])[:10] if r[9] else datetime.now().strftime("%Y-%m-%d"),
         'voucher_type': r[21] or "Expense",
@@ -665,6 +687,9 @@ def save_voucher():
 
     # Submission routes to Department Head (HOD) approval first: status = 'SUBMITTED'
     target_status = "SUBMITTED" if action_type in ["SUBMIT", "SUBMITTED"] else "DRAFT"
+    user_message = request.form.get("user_message", "").strip()
+    if user_message:
+        purpose = user_message
 
     if not trip_id:
         timestamp_suffix = datetime.now().strftime("%y%m%d%H%M%S")
@@ -702,13 +727,14 @@ def save_voucher():
             """, (trip_id, new_advance, start_date, user_id))
 
         if target_status == "SUBMITTED":
+            sub_comments = user_message or 'Initial Submission'
             cur.execute("""
                 INSERT INTO dbo.voucher_approval_history (
                     trip_id, voucher_id, submission_no, action_type, actor_id, actor_name, actor_role, comments, created_at
                 ) VALUES (
-                    ?, ?, 1, 'SUBMITTED', ?, ?, 'Employee', 'Initial Submission', GETDATE()
+                    ?, ?, 1, 'SUBMITTED', ?, ?, 'Employee', ?, GETDATE()
                 )
-            """, (trip_id, voucher_id, user_id, full_name))
+            """, (trip_id, voucher_id, user_id, full_name, sub_comments))
 
     else:
         # Update existing voucher
@@ -751,7 +777,8 @@ def save_voucher():
             sub_no = cur.fetchone()[0]
 
             act_type = "RESUBMITTED" if curr_st == "REJECTED" else "SUBMITTED"
-            comments = "Resubmitted by creator after correcting details" if curr_st == "REJECTED" else "Resubmitted for approval"
+            default_comments = "Resubmitted by creator after correcting details" if curr_st == "REJECTED" else "Resubmitted for approval"
+            sub_comments = user_message or default_comments
 
             cur.execute("""
                 INSERT INTO dbo.voucher_approval_history (
@@ -759,7 +786,7 @@ def save_voucher():
                 ) VALUES (
                     ?, ?, ?, ?, ?, ?, 'Employee', ?, GETDATE()
                 )
-            """, (trip_id, voucher_id, sub_no, act_type, user_id, full_name, comments))
+            """, (trip_id, voucher_id, sub_no, act_type, user_id, full_name, sub_comments))
 
     # Process line items
     line_dates = request.form.getlist("line_date[]")
@@ -868,12 +895,27 @@ def hod_trip_action(trip_id):
 
     real_trip_id = t_row[1]
 
+    cur.execute("SELECT ISNULL(voucher_id, trip_id) FROM dbo.user_trip_vouchers WHERE trip_id = ?", (real_trip_id,))
+    vch_no_row = cur.fetchone()
+    vch_no_val = vch_no_row[0] if vch_no_row else real_trip_id
+    reviewer_name = session.get("full_name", "Department Head")
+
     if action in ["HOD_APPROVE", "APPROVE"]:
         cur.execute("""
             UPDATE dbo.user_trip_vouchers
             SET status = 'HOD_APPROVED', hod_approved_by = ?, hod_approved_at = GETDATE(), hod_remarks = ?
             WHERE trip_id = ?
         """, (user_id, remarks, real_trip_id))
+
+        cur.execute("SELECT ISNULL(MAX(submission_no), 1) FROM dbo.voucher_approval_history WHERE trip_id = ?", (real_trip_id,))
+        sub_no = cur.fetchone()[0]
+        cur.execute("""
+            INSERT INTO dbo.voucher_approval_history (
+                trip_id, voucher_id, submission_no, action_type, actor_id, actor_name, actor_role, comments, created_at
+            ) VALUES (
+                ?, ?, ?, 'HOD_APPROVED', ?, ?, 'HOD', ?, GETDATE()
+            )
+        """, (real_trip_id, vch_no_val, sub_no, user_id, reviewer_name, remarks or 'Approved by Department Head'))
 
     elif action == "SEND_BACK":
         if not remarks:
@@ -886,6 +928,16 @@ def hod_trip_action(trip_id):
             WHERE trip_id = ?
         """, (user_id, remarks, remarks, real_trip_id))
 
+        cur.execute("SELECT ISNULL(MAX(submission_no), 1) FROM dbo.voucher_approval_history WHERE trip_id = ?", (real_trip_id,))
+        sub_no = cur.fetchone()[0]
+        cur.execute("""
+            INSERT INTO dbo.voucher_approval_history (
+                trip_id, voucher_id, submission_no, action_type, actor_id, actor_name, actor_role, comments, created_at
+            ) VALUES (
+                ?, ?, ?, 'SENT_BACK', ?, ?, 'HOD', ?, GETDATE()
+            )
+        """, (real_trip_id, vch_no_val, sub_no, user_id, reviewer_name, remarks))
+
     elif action == "REJECT":
         if not remarks:
             remarks = "Rejected by HOD"
@@ -896,9 +948,15 @@ def hod_trip_action(trip_id):
             WHERE trip_id = ?
         """, (user_id, remarks, remarks, real_trip_id))
 
-    cur.execute("SELECT ISNULL(voucher_id, trip_id) FROM dbo.user_trip_vouchers WHERE trip_id = ?", (real_trip_id,))
-    vch_no_row = cur.fetchone()
-    vch_no_val = vch_no_row[0] if vch_no_row else real_trip_id
+        cur.execute("SELECT ISNULL(MAX(submission_no), 1) FROM dbo.voucher_approval_history WHERE trip_id = ?", (real_trip_id,))
+        sub_no = cur.fetchone()[0]
+        cur.execute("""
+            INSERT INTO dbo.voucher_approval_history (
+                trip_id, voucher_id, submission_no, action_type, actor_id, actor_name, actor_role, comments, created_at
+            ) VALUES (
+                ?, ?, ?, 'REJECTED', ?, ?, 'HOD', ?, GETDATE()
+            )
+        """, (real_trip_id, vch_no_val, sub_no, user_id, reviewer_name, remarks))
 
     conn.commit()
     conn.close()
@@ -941,7 +999,7 @@ def admin_expenses():
                 v.purpose, v.from_location, v.to_location, v.start_date, v.end_date,
                 v.voucher_amount, v.status, v.accounts_remarks, v.created_at, v.submitted_at,
                 v.visited_company, v.settlement_status, v.voucher_type,
-                v.hod_approved_at, v.hod_remarks
+                v.hod_approved_at, v.hod_remarks, v.rejection_reason, v.sent_back_reason
             FROM dbo.user_trip_vouchers v
             WHERE v.status IN ('HOD_APPROVED', 'APPROVED', 'SETTLED', 'CLOSED', 'ADVANCE_ISSUED')
             ORDER BY v.created_at DESC
@@ -954,7 +1012,7 @@ def admin_expenses():
                 v.purpose, v.from_location, v.to_location, v.start_date, v.end_date,
                 v.voucher_amount, v.status, v.accounts_remarks, v.created_at, v.submitted_at,
                 v.visited_company, v.settlement_status, v.voucher_type,
-                v.hod_approved_at, v.hod_remarks
+                v.hod_approved_at, v.hod_remarks, v.rejection_reason, v.sent_back_reason
             FROM dbo.user_trip_vouchers v
             WHERE v.status <> 'DRAFT'
             ORDER BY v.created_at DESC
@@ -972,6 +1030,8 @@ def admin_expenses():
         voucher_type = r[18] or "Expense"
 
         fin = get_trip_financials(cur, trip_id)
+        purpose = r[6] or "Internal Expense"
+        usr_msg = purpose if (purpose and purpose.strip() and purpose.strip().lower() not in ['internal expense', 'bhipl expense', 'general expense']) else ""
 
         vouchers.append({
             'trip_id': trip_id,
@@ -980,7 +1040,8 @@ def admin_expenses():
             'emp_id': r[3] or "-",
             'employee_name': r[4] or "Employee",
             'department': r[5] or "SERVICE",
-            'purpose': r[6] or "Internal Expense",
+            'purpose': purpose,
+            'user_message': usr_msg,
             'visited_company': r[16] or r[8] or "BHIPL Expense",
             'date': start_date,
             'voucher_type': voucher_type,
@@ -993,7 +1054,9 @@ def admin_expenses():
             'accounts_remarks': r[13] or "",
             'submitted_at': sub_date,
             'hod_approved_at': hod_app_date,
-            'hod_remarks': r[20] or ""
+            'hod_remarks': r[20] or "",
+            'rejection_reason': (r[21] or r[20] or r[13] or "") if status == 'REJECTED' else "",
+            'sent_back_reason': (r[22] or r[20] or r[13] or "") if status == 'SENT_BACK' else ""
         })
 
     # Fetch all employees for Cashier Credit dropdown selection

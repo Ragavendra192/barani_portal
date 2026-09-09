@@ -333,15 +333,25 @@ def manage_permissions_list():
     if "user_id" not in session or session.get("role") != "admin":
         return redirect("/access_denied")
 
+    emp_id_filter = request.args.get("emp_id", "").strip()
+
     conn = get_connection()
     cur = conn.cursor()
 
-    # Fetch all users
-    cur.execute("""
-        SELECT id, emp_id, full_name, email, department
-        FROM users
-        ORDER BY full_name
-    """)
+    # Fetch users (optionally filtered by emp_id)
+    if emp_id_filter:
+        cur.execute("""
+            SELECT id, emp_id, full_name, email, department
+            FROM users
+            WHERE emp_id LIKE ?
+            ORDER BY full_name
+        """, f"%{emp_id_filter}%")
+    else:
+        cur.execute("""
+            SELECT id, emp_id, full_name, email, department
+            FROM users
+            ORDER BY full_name
+        """)
     raw_users = cur.fetchall()
 
     # Fetch all active user app permissions
@@ -374,7 +384,7 @@ def manage_permissions_list():
             'apps': perms_by_user.get(u_id, [])
         })
 
-    return render_template("manage_permissions_list.html", users=users_list)
+    return render_template("manage_permissions_list.html", users=users_list, emp_id_filter=emp_id_filter)
 
 
 @admin_bp.route("/admin/permissions/<int:user_id>", methods=["GET", "POST"])

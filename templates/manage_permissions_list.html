@@ -2,13 +2,33 @@
 
 {% block content %}
 <div class="permissions-list-container">
-    <div class="page-header">
-        <h2>🔐 Application Permissions</h2>
-        <p class="muted-text">Overview of allowed application access per employee. Select configure to edit permissions.</p>
+    <!-- Filter Toolbar -->
+    <div class="filter-toolbar">
+        <form method="get" action="/admin/permissions" class="filter-form" id="filterForm">
+            <div class="filter-input-group">
+                <span class="filter-icon">🔍</span>
+                <input 
+                    type="text" 
+                    id="empIdFilter" 
+                    name="emp_id" 
+                    value="{{ emp_id_filter|default('') }}" 
+                    placeholder="Filter by Employee ID..." 
+                    class="filter-input"
+                    autocomplete="off"
+                    oninput="filterTable()"
+                >
+                <button type="button" id="clearBtn" class="filter-clear-btn" onclick="clearFilter()" title="Clear filter" style="display: none;">✕</button>
+            </div>
+            <button type="submit" class="btn-filter">Filter</button>
+            <a href="/admin/permissions" class="btn-reset" id="resetBtn" onclick="clearFilter(); return false;">Reset</a>
+        </form>
+        <div class="filter-counter">
+            Showing <span id="filteredCount" class="counter-highlight">{{ users|length }}</span> of <span id="totalCount">{{ users|length }}</span> employees
+        </div>
     </div>
 
     <div class="table-card">
-        <table class="premium-table">
+        <table class="premium-table" id="permissionsTable">
             <thead>
                 <tr>
                     <th>Employee ID</th>
@@ -19,10 +39,10 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="permissionsTableBody">
                 {% for u in users %}
-                <tr>
-                    <td class="bold-text">{{ u.emp_id if u.emp_id else '-' }}</td>
+                <tr class="user-row" data-empid="{{ (u.emp_id or '')|lower }}">
+                    <td class="bold-text emp-id-col">{{ u.emp_id if u.emp_id else '-' }}</td>
                     <td>{{ u.full_name }}</td>
                     <td>{{ u.email }}</td>
                     <td>
@@ -43,34 +63,201 @@
                         </div>
                     </td>
                 </tr>
+                {% else %}
+                <tr class="no-data-row">
+                    <td colspan="6" class="no-records-cell">No employees found</td>
+                </tr>
                 {% endfor %}
+                <tr id="noResultsRow" style="display: none;">
+                    <td colspan="6" class="no-records-cell">No matching employees found for the entered Employee ID</td>
+                </tr>
             </tbody>
         </table>
     </div>
 </div>
+
+<!-- ================= JAVASCRIPT FILTER LOGIC ================= -->
+<script>
+function filterTable() {
+    var input = document.getElementById('empIdFilter');
+    var filterValue = input.value.toLowerCase().trim();
+    var clearBtn = document.getElementById('clearBtn');
+    var rows = document.querySelectorAll('#permissionsTableBody tr.user-row');
+    var visibleCount = 0;
+    var noResultsRow = document.getElementById('noResultsRow');
+
+    if (clearBtn) {
+        clearBtn.style.display = filterValue ? 'inline-flex' : 'none';
+    }
+
+    rows.forEach(function(row) {
+        var empId = row.getAttribute('data-empid') || '';
+        if (!filterValue || empId.indexOf(filterValue) > -1) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    if (noResultsRow) {
+        noResultsRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+    }
+
+    var countEl = document.getElementById('filteredCount');
+    if (countEl) {
+        countEl.textContent = visibleCount;
+    }
+}
+
+function clearFilter() {
+    var input = document.getElementById('empIdFilter');
+    if (input) {
+        input.value = '';
+    }
+    filterTable();
+    if (input) {
+        input.focus();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var input = document.getElementById('empIdFilter');
+    if (input && input.value.trim() !== '') {
+        filterTable();
+    }
+});
+</script>
 
 <!-- ================= CSS STYLING ================= -->
 <style>
 .permissions-list-container {
     width: 100%;
     max-width: 100%;
-    animation: fadeIn 0.4s ease-out;
+    padding-top: 10px;
+    animation: fadeIn 0.3s ease-out;
 }
 
-.page-header {
-    margin-bottom: 25px;
+/* ----- FILTER TOOLBAR ----- */
+.filter-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 16px;
+    background: #ffffff;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-.page-header h2 {
-    font-size: 24px;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 6px;
+.filter-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
-.muted-text {
+.filter-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 260px;
+}
+
+.filter-icon {
+    position: absolute;
+    left: 12px;
     font-size: 14px;
+    color: #94a3b8;
+    pointer-events: none;
+}
+
+.filter-input {
+    width: 100%;
+    padding: 8px 34px 8px 36px;
+    font-size: 13.5px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 6px;
+    outline: none;
+    transition: all 0.15s ease;
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+.filter-input:focus {
+    border-color: #2563eb;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.filter-clear-btn {
+    position: absolute;
+    right: 8px;
+    background: #e2e8f0;
     color: #64748b;
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.filter-clear-btn:hover {
+    background: #cbd5e1;
+    color: #1e293b;
+}
+
+.btn-filter {
+    background: #003366;
+    color: #ffffff;
+    border: 1px solid #002244;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.btn-filter:hover {
+    background: #002244;
+}
+
+.btn-reset {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-reset:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.filter-counter {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.counter-highlight {
+    font-weight: 700;
+    color: #0f172a;
 }
 
 /* ----- PREMIUM TABLE CARD ----- */
@@ -107,13 +294,21 @@
     vertical-align: middle;
 }
 
-.premium-table tbody tr:hover {
+.premium-table tbody tr.user-row:hover {
     background: #f8fafc;
 }
 
 .bold-text {
     font-weight: 600;
     color: #0f172a;
+}
+
+.no-records-cell {
+    text-align: center;
+    padding: 30px;
+    color: #94a3b8;
+    font-size: 14px;
+    font-style: italic;
 }
 
 /* ----- BADGES ----- */

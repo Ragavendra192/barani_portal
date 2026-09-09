@@ -816,13 +816,14 @@
 
             <select id="adminStatusFilter" onchange="filterAdminTable()"
                 style="padding: 6px 10px; border: 1px solid #94a3b8; font-size: 12px; font-weight: 700; color: #003366; border-radius: 4px; outline: none;">
+                <option value="ACTIVE" selected>Active Vouchers Only</option>
                 <option value="ALL">All Statuses</option>
                 <option value="SUBMITTED">Submitted (HOD Review)</option>
                 <option value="HOD_APPROVED">HOD Approved (Accounts Review)</option>
                 <option value="APPROVED">Approved by Accounts</option>
                 <option value="SENT_BACK">Sent Back</option>
                 <option value="REJECTED">Rejected</option>
-                <option value="SETTLED">Settled</option>
+                <option value="SETTLED">Settled / Closed</option>
             </select>
         </div>
     </div>
@@ -839,6 +840,7 @@
                     <th>Date</th>
                     <th style="text-align: right;">Total Amount</th>
                     <th style="text-align: center;">Status</th>
+                    <th style="min-width: 170px;">Messages</th>
                     <th style="text-align: center;">Action</th>
                 </tr>
             </thead>
@@ -852,7 +854,7 @@
                     <td style="font-weight: 600;">{{ v.voucher_type }}</td>
                     <td style="font-weight: 600;">{{ v.date }}</td>
                     <td style="text-align: right; font-weight: 800; color: #003366;">{{ v.total_expenses|inr }}</td>
-                    <td style="text-align: center;">
+                    <td style="text-align: center; vertical-align: middle;">
                         {% if v.status == 'DRAFT' %}
                         <span class="vch-badge vch-badge-draft">DRAFT</span>
                         {% elif v.status == 'SUBMITTED' %}
@@ -869,6 +871,23 @@
                         <span class="vch-badge vch-badge-settled">SETTLED</span>
                         {% else %}
                         <span class="vch-badge vch-badge-draft">{{ v.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="vertical-align: middle;">
+                        {% if v.status == 'REJECTED' and v.rejection_reason %}
+                        <span style="color: #b91c1c; font-weight: 700; font-size: 11px; line-height: 1.3;" title="{{ v.rejection_reason }}">
+                            "{{ v.rejection_reason }}"
+                        </span>
+                        {% elif v.status == 'SENT_BACK' and v.sent_back_reason %}
+                        <span style="color: #b45309; font-weight: 700; font-size: 11px; line-height: 1.3;" title="{{ v.sent_back_reason }}">
+                            "{{ v.sent_back_reason }}"
+                        </span>
+                        {% elif v.user_message or (v.purpose and v.purpose.lower() not in ['internal expense', 'bhipl expense', 'general expense']) %}
+                        <span style="color: #1e40af; font-weight: 700; font-size: 11px; line-height: 1.3;" title="{{ v.user_message or v.purpose }}">
+                            "{{ v.user_message or v.purpose }}"
+                        </span>
+                        {% else %}
+                        <span style="color: #94a3b8; font-size: 11px;">—</span>
                         {% endif %}
                     </td>
                     <td style="text-align: center;">
@@ -936,6 +955,15 @@
                     class="audit-meta-val">-</strong></div>
             <div style="grid-column: span 2;"><span class="audit-meta-label">HOD Approval:</span> <strong
                     id="accHodApprovedAt" style="color: #15803d; font-size: 12px;">-</strong></div>
+        </div>
+
+        <!-- EMPLOYEE MESSAGE TO HOD / APPROVER -->
+        <div id="accUserMsgBox" style="display: none; margin-top: 10px; padding: 10px 14px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-left: 4px solid #2563eb; border-radius: 4px; font-size: 12px;">
+            <div style="font-weight: 800; color: #1e40af; text-transform: uppercase; font-size: 11px; margin-bottom: 3px; display: flex; align-items: center; gap: 6px;">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                <span>Employee Message / Note:</span>
+            </div>
+            <div id="accUserMsgText" style="font-weight: 700; color: #1e3a8a; word-break: break-word; line-height: 1.4;"></div>
         </div>
     </div>
 
@@ -1544,6 +1572,17 @@
                 document.getElementById('accDepartment').innerText = data.department;
                 document.getElementById('accHodApprovedAt').innerText = data.hod_approved_at || "Not yet approved by HOD";
 
+                const userMsgBox = document.getElementById('accUserMsgBox');
+                const userMsgText = document.getElementById('accUserMsgText');
+                if (userMsgBox && userMsgText) {
+                    if (data.user_message && data.user_message.trim()) {
+                        userMsgText.innerText = `"${data.user_message.trim()}"`;
+                        userMsgBox.style.display = 'block';
+                    } else {
+                        userMsgBox.style.display = 'none';
+                    }
+                }
+
                 const badge = document.getElementById('accStatusBadge');
                 badge.innerText = (data.status === 'SUBMITTED') ? 'SUBMITTED (HOD REVIEW)' : (data.status === 'HOD_APPROVED') ? 'HOD APPROVED' : data.status;
                 badge.className = 'vch-badge';
@@ -1996,10 +2035,20 @@
 
         rows.forEach(row => {
             const text = row.innerText.toLowerCase();
-            const rStatus = row.getAttribute('data-status');
+            const rStatus = (row.getAttribute('data-status') || '').toUpperCase();
 
             const matchesText = text.includes(q);
-            const matchesStatus = (st === 'ALL' || rStatus === st);
+            let matchesStatus = false;
+
+            if (st === 'ALL') {
+                matchesStatus = true;
+            } else if (st === 'ACTIVE') {
+                matchesStatus = !['SETTLED', 'CLOSED'].includes(rStatus);
+            } else if (st === 'SETTLED') {
+                matchesStatus = ['SETTLED', 'CLOSED'].includes(rStatus);
+            } else {
+                matchesStatus = (rStatus === st);
+            }
 
             if (matchesText && matchesStatus) {
                 row.style.display = '';
@@ -2030,6 +2079,11 @@
             const urlParams = new URLSearchParams(window.location.search);
             const initialTab = urlParams.get('tab') || 'ledger';
             switchCashierTab(initialTab);
+        }
+
+        // Apply active vouchers filter on initial load
+        if (typeof filterAdminTable === 'function') {
+            filterAdminTable();
         }
     });
 </script>

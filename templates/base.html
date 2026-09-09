@@ -531,6 +531,14 @@
             window.addEventListener(evt, onUserActivity, { passive: true, capture: true });
         });
 
+        // Track tab focus and visibility to keep session active when switching tabs
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                onUserActivity();
+            }
+        });
+        window.addEventListener('focus', onUserActivity);
+
         // Listen for user interactions within persistent iframe application
         const appFrame = document.getElementById('persistentAppFrame');
         if (appFrame) {
@@ -1086,6 +1094,64 @@ function renderVoucherWorkflowTimeline(data, targetContainerId) {
 
     html += `
             </div>
+    `;
+
+    // Render Rejection Reason callout box if voucher was rejected
+    if (status === 'REJECTED') {
+        const reasonText = (data.rejection_reason || 'No specific reason provided.').trim();
+        const actorName = data.rejected_by_name || '';
+        const actorRole = rejRole || 'Reviewer';
+        const dateStr = data.rejected_at_str || '';
+
+        html += `
+            <div class="wf-rejection-callout" style="margin-top: 16px; background: #fef2f2; border: 1.5px solid #fca5a5; border-left: 5px solid #dc2626; border-radius: 6px; padding: 12px 16px; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.08);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid #fee2e2; padding-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                    <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 900; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+                        <span>REJECTION REASON (${actorRole}):</span>
+                    </div>
+                    ${dateStr ? `<span style="font-size: 11px; font-weight: 700; color: #b91c1c;">📅 ${dateStr}</span>` : ''}
+                </div>
+                <div style="font-size: 13px; font-weight: 700; color: #7f1d1d; line-height: 1.4; padding-left: 22px; word-break: break-word;">
+                    "${reasonText}"
+                </div>
+                ${actorName ? `
+                <div style="font-size: 11px; font-weight: 600; color: #991b1b; padding-left: 22px; margin-top: 4px;">
+                    Rejected by: <strong>${actorName}</strong> (${actorRole})
+                </div>` : ''}
+            </div>
+        `;
+    } else if (status === 'SENT_BACK') {
+        const sbReason = (data.sent_back_reason || data.accounts_remarks || data.hod_remarks || 'Please review and adjust line items.').trim();
+        html += `
+            <div class="wf-sentback-callout" style="margin-top: 16px; background: #fffbeb; border: 1.5px solid #fde68a; border-left: 5px solid #f59e0b; border-radius: 6px; padding: 12px 16px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.08);">
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 900; color: #92400e; text-transform: uppercase; margin-bottom: 6px; border-bottom: 1px solid #fef3c7; padding-bottom: 6px;">
+                    <span>✍ CHANGES REQUIRED (SENT BACK):</span>
+                </div>
+                <div style="font-size: 13px; font-weight: 700; color: #78350f; line-height: 1.4; padding-left: 22px; word-break: break-word;">
+                    "${sbReason}"
+                </div>
+            </div>
+        `;
+    }
+
+    // Render Employee Note / Message to HOD if provided
+    if (data.user_message && data.user_message.trim()) {
+        const userMsg = data.user_message.trim();
+        html += `
+            <div class="wf-usermsg-callout" style="margin-top: 14px; background: #eff6ff; border: 1.5px solid #bfdbfe; border-left: 5px solid #2563eb; border-radius: 6px; padding: 12px 16px; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.06);">
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #1e40af; text-transform: uppercase; margin-bottom: 5px; border-bottom: 1px solid #dbeafe; padding-bottom: 5px;">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <span>Message to Approver / HOD:</span>
+                </div>
+                <div style="font-size: 13px; font-weight: 600; color: #1e3a8a; line-height: 1.45; padding-left: 21px; word-break: break-word;">
+                    "${userMsg}"
+                </div>
+            </div>
+        `;
+    }
+
+    html += `
         </div>
     `;
 

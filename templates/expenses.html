@@ -138,6 +138,22 @@ input[type=number] {
 .vch-badge-rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 .vch-badge-sentback { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
 .vch-badge-settled { background: #f3e8ff; color: #6b21a8; border: 1px solid #d8b4fe; }
+.vch-badge-rejection-banner {
+    background: #fef2f2 !important;
+    border: 1.5px solid #fca5a5 !important;
+    border-left: 5px solid #dc2626 !important;
+    border-radius: 6px !important;
+    padding: 12px 18px !important;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
+}
+.vch-badge-sentback-banner {
+    background: #fffbeb !important;
+    border: 1.5px solid #fde68a !important;
+    border-left: 5px solid #d97706 !important;
+    border-radius: 6px !important;
+    padding: 12px 18px !important;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.08);
+}
 
 /* Native Application Inline Voucher Editor Container (High Contrast Inside Background Fill) */
 .inline-voucher-card {
@@ -414,6 +430,39 @@ input[type=number] {
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0, 51, 102, 0.25);
 }
+
+/* User Vouchers Table Container & Row Styling */
+.vch-table-container {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    overflow-x: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+.vch-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.vch-list-table th {
+    background: #003366;
+    color: #ffffff;
+    padding: 10px 14px;
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid #002244;
+}
+.vch-list-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #1e293b;
+    vertical-align: middle;
+}
+.vch-list-table tr:hover {
+    background: #f8fafc;
+}
 </style>
 
 <!-- TOP NAVBAR & TITLE BAR -->
@@ -427,45 +476,17 @@ input[type=number] {
         {% endif %}
     </div>
 
-    <!-- TOP-RIGHT ACTION AREA WITH ADVANCE AMOUNT INPUT & CREATE NEXT BUTTON -->
+    <!-- TOP-RIGHT ACTION AREA WITH CREATE BUTTON -->
     <div style="display: flex; align-items: center; gap: 14px;">
-        {% if uncleared_rejected %}
-            <div style="font-size: 12px; font-weight: 700; color: #dc2626; background: #fef2f2; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 4px;">
-                Clear the rejected voucher before creating a new voucher.
-            </div>
-        {% else %}
-            <div class="header-advance-box" id="headerAdvanceBox">
-                <span style="font-size: 11px; font-weight: 800; color: #003366; text-transform: uppercase;">AMOUNT:</span>
-                <input type="number" step="0.01" id="topHeaderAdvance" class="vch-input-field" value="0.00" onfocus="this.select()" oninput="syncAdvanceAmount(this.value)" style="width: 115px; font-weight: 800; color: #003366; text-align: right;">
-            </div>
-            <button type="button" id="btnCreateVchHeader" onclick="openInlineVoucher('CREATE')" class="btn-create-vch">
-                + CREATE VOUCHER
-            </button>
-        {% endif %}
+        <div class="header-advance-box" id="headerAdvanceBox" style="display: none;">
+            <span style="font-size: 11px; font-weight: 800; color: #003366; text-transform: uppercase;">AMOUNT:</span>
+            <input type="number" step="0.01" id="topHeaderAdvance" class="vch-input-field" value="0.00" onfocus="this.select()" oninput="syncAdvanceAmount(this.value)" style="width: 115px; font-weight: 800; color: #003366; text-align: right;">
+        </div>
+        <button type="button" id="btnCreateVchHeader" onclick="openInlineVoucher('CREATE')" class="btn-create-vch">
+            + CREATE VOUCHER
+        </button>
     </div>
 </div>
-
-{% if uncleared_rejected %}
-<!-- COMPACT REJECTED VOUCHER NOTIFICATION -->
-<div id="unclearedRejectedContainer" style="margin-bottom: 20px;">
-    <div style="background: #ffffff; border: 2px solid #ef4444; border-radius: 8px; padding: 18px 22px; max-width: 520px; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.15); margin: 0 auto; text-align: left;">
-        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #fecaca; padding-bottom: 8px; margin-bottom: 12px;">
-            <span style="font-size: 14px; font-weight: 900; color: #dc2626; letter-spacing: 0.5px;">✕ VOUCHER REJECTED</span>
-        </div>
-        <div style="color: #334155; font-size: 13px; font-weight: 600; line-height: 1.5; margin-bottom: 14px;">
-            Voucher <strong style="color: #003366;">{{ uncleared_rejected.voucher_id }}</strong> was rejected by <strong>{{ uncleared_rejected.rejected_by_role }} ({{ uncleared_rejected.rejected_by_name }})</strong>.
-            <div style="margin-top: 6px; font-size: 12px; color: #64748b;">
-                Please clear this rejected voucher before creating a new voucher.
-            </div>
-        </div>
-        <div style="display: flex; justify-content: flex-end;">
-            <button type="button" onclick="promptClearRejectedVoucher('{{ uncleared_rejected.trip_id }}', '{{ uncleared_rejected.voucher_id }}')" style="background: #dc2626; color: #ffffff; border: none; padding: 8px 22px; font-size: 12px; font-weight: 800; border-radius: 4px; cursor: pointer; letter-spacing: 0.5px; transition: background 0.2s ease;">
-                CLEAR
-            </button>
-        </div>
-    </div>
-</div>
-{% endif %}
 
 {% if request.args.get('error') %}
 <div style="background: #fef2f2; border: 2px solid #ef4444; color: #991b1b; padding: 12px 18px; border-radius: 6px; font-weight: 800; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 12px rgba(239,68,68,0.1);">
@@ -474,8 +495,110 @@ input[type=number] {
 </div>
 {% endif %}
 
-<!-- 1. INLINE EXPENSE VOUCHER EDITOR CONTAINER (THE PRIMARY WORKSPACE) -->
-<div id="inlineVoucherContainer" class="inline-voucher-card">
+<!-- 1. USER VOUCHERS LISTING WORKSPACE (TABLE VIEW) -->
+<div id="userListingWorkspace" style="margin-top: 10px; margin-bottom: 24px;">
+    <!-- SEARCH & ACTION BAR -->
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #ffffff; border: 1px solid #cbd5e1; padding: 10px 14px; margin-bottom: 14px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px; flex: 1; max-width: 360px;">
+            <input type="text" id="userSearchInput" onkeyup="filterUserTable()"
+                placeholder="Search by Voucher No, Purpose, Particulars..."
+                style="padding: 6px 12px; border: 1px solid #94a3b8; font-size: 12px; width: 100%; border-radius: 4px; outline: none;">
+        </div>
+
+        <div>
+            <button type="button" onclick="openInlineVoucher('CREATE')" class="btn-create-vch" style="padding: 7px 18px; font-size: 12px;">
+                + CREATE VOUCHER
+            </button>
+        </div>
+    </div>
+
+    <div class="vch-table-container">
+        {% if vouchers %}
+        <table class="vch-list-table" id="userVoucherTable">
+            <thead>
+                <tr>
+                    <th>Voucher No</th>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th style="text-align: right;">Total Amount</th>
+                    <th style="text-align: center;">Status</th>
+                    <th style="min-width: 170px;">Messages</th>
+                    <th style="text-align: center;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for v in vouchers %}
+                <tr class="vch-user-row" data-status="{{ v.status }}">
+                    <td style="font-weight: 800; color: #003366;">{{ v.voucher_id }}</td>
+                    <td style="font-weight: 700;">{{ v.employee_name }} <small style="color: #64748b;">({{ v.emp_id }})</small></td>
+                    <td style="font-weight: 600;">{{ v.department }}</td>
+                    <td style="font-weight: 600;">{{ v.voucher_type }}</td>
+                    <td style="font-weight: 600;">{{ v.date }}</td>
+                    <td style="text-align: right; font-weight: 800; color: #003366;">{{ v.total_expenses|inr }}</td>
+                    <td style="text-align: center; vertical-align: middle;">
+                        {% if v.status == 'DRAFT' %}
+                        <span class="vch-badge vch-badge-draft">DRAFT</span>
+                        {% elif v.status == 'SUBMITTED' %}
+                        <span class="vch-badge vch-badge-submitted">SUBMITTED (HOD REVIEW)</span>
+                        {% elif v.status == 'HOD_APPROVED' %}
+                        <span class="vch-badge vch-badge-submitted">HOD APPROVED</span>
+                        {% elif v.status == 'APPROVED' %}
+                        <span class="vch-badge vch-badge-approved">APPROVED BY ACCOUNTS</span>
+                        {% elif v.status == 'REJECTED' %}
+                        <span class="vch-badge vch-badge-rejected">REJECTED</span>
+                        {% elif v.status == 'SENT_BACK' %}
+                        <span class="vch-badge vch-badge-sentback">SENT BACK</span>
+                        {% elif v.status == 'SETTLED' or v.status == 'CLOSED' %}
+                        <span class="vch-badge vch-badge-settled">SETTLED</span>
+                        {% else %}
+                        <span class="vch-badge vch-badge-draft">{{ v.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="vertical-align: middle;">
+                        {% if v.status == 'REJECTED' and v.rejection_reason %}
+                        <span style="color: #b91c1c; font-weight: 700; font-size: 11px; line-height: 1.3;" title="{{ v.rejection_reason }}">
+                            "{{ v.rejection_reason }}"
+                        </span>
+                        {% elif v.status == 'SENT_BACK' and v.sent_back_reason %}
+                        <span style="color: #b45309; font-weight: 700; font-size: 11px; line-height: 1.3;" title="{{ v.sent_back_reason }}">
+                            "{{ v.sent_back_reason }}"
+                        </span>
+                        {% elif v.user_message or (v.purpose and v.purpose.lower() not in ['internal expense', 'bhipl expense', 'general expense']) %}
+                        <span style="color: #1e40af; font-weight: 700; font-size: 11px; line-height: 1.3;" title="{{ v.user_message or v.purpose }}">
+                            "{{ v.user_message or v.purpose }}"
+                        </span>
+                        {% else %}
+                        <span style="color: #94a3b8; font-size: 11px;">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        <button type="button" onclick="openInlineVoucher('VIEW', '{{ v.trip_id }}')"
+                            style="background: #003366; color: #ffffff; border: none; padding: 5px 14px; font-size: 11px; font-weight: 800; cursor: pointer; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            VIEW
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div style="text-align: center; padding: 40px; color: var(--text-muted, #64748b); font-size: 13px;">
+            No vouchers created yet. Click <strong>"+ CREATE VOUCHER"</strong> above to create your first voucher.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 2. INLINE EXPENSE VOUCHER EDITOR CONTAINER (THE PRIMARY WORKSPACE) -->
+<div id="inlineVoucherContainer" class="inline-voucher-card" style="display: none;">
+    <!-- TOP NAVIGATION BAR -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid rgba(0, 51, 102, 0.2);">
+        <button type="button" onclick="closeInlineVoucher()" style="background: #003366; color: #ffffff; border: none; padding: 6px 16px; font-size: 12px; font-weight: 800; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            ← BACK TO MY VOUCHERS
+        </button>
+    </div>
 
     <!-- TOP QUICK EXPENSE ENTRY BAR (HIDDEN WHEN SUBMITTED / APPROVED / READ-ONLY) -->
     <div class="quick-entry-bar" id="quickEntryBar">
@@ -543,6 +666,7 @@ input[type=number] {
         <input type="hidden" id="vchPurpose" name="purpose" value="Internal Expense">
         <input type="hidden" id="vchType" name="voucher_type" value="Expense">
         <input type="hidden" id="vchNewAdvance" name="new_advance" value="0.00">
+        <input type="hidden" id="vchUserMessage" name="user_message" value="">
 
         <!-- COMPONENT HEADER -->
         <div class="inline-vch-header">
@@ -719,6 +843,13 @@ input[type=number] {
                 </div>
             </div>
             
+            <div id="modalUserMessageSection" style="margin-top: 12px; margin-bottom: 12px;">
+                <label style="display: block; font-size: 11px; font-weight: 800; color: #003366; text-transform: uppercase; margin-bottom: 4px;">
+                    ✉️ Message to HOD / Submission Notes (Optional):
+                </label>
+                <textarea id="modalUserMessageInput" rows="2" class="vch-input-field" placeholder="Add any note, explanation, or message for your Department Head..." style="width: 100%; resize: vertical; font-size: 12px; padding: 6px 10px;"></textarea>
+            </div>
+            
             <p style="font-size: 11px; color: #64748b; margin-bottom: 0;">Once submitted, the voucher will be locked and forwarded to your Department Head for verification.</p>
         </div>
         <div class="modal-footer-actions">
@@ -811,6 +942,8 @@ function syncAdvanceAmount(val) {
 function openInlineVoucher(mode, tripId = null) {
     currentInlineMode = mode;
     const container = document.getElementById('inlineVoucherContainer');
+    const listingWorkspace = document.getElementById('userListingWorkspace');
+    if (listingWorkspace) listingWorkspace.style.display = 'none';
 
     if (mode === 'CREATE') {
         document.getElementById('vchTripId').value = '';
@@ -847,6 +980,7 @@ function openInlineVoucher(mode, tripId = null) {
 
         onVoucherTypeChange();
         container.style.display = 'block';
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     } else if (mode === 'VIEW' && tripId) {
         fetch('/expenses/voucher/' + tripId + '?format=json')
@@ -868,7 +1002,7 @@ function openInlineVoucher(mode, tripId = null) {
 
                 const rejRole = data.rejected_by_role || 'Accounts';
                 updateInlineBadge(data.status, rejRole);
-                setInlineEditability(data.is_editable, data.status, rejRole);
+                setInlineEditability(data.is_editable, data.status, rejRole, data.rejection_reason, data.rejected_by_name, data.rejected_at_str, data.sent_back_reason);
 
                 // Render dynamic visual workflow timeline
                 if (typeof renderVoucherWorkflowTimeline === 'function') {
@@ -897,7 +1031,32 @@ function openInlineVoucher(mode, tripId = null) {
 }
 
 function closeInlineVoucher() {
-    document.getElementById('inlineVoucherContainer').style.display = 'none';
+    const container = document.getElementById('inlineVoucherContainer');
+    const listingWorkspace = document.getElementById('userListingWorkspace');
+    if (container) container.style.display = 'none';
+    if (listingWorkspace) {
+        listingWorkspace.style.display = 'block';
+        if (typeof filterUserTable === 'function') filterUserTable();
+    }
+}
+
+function filterUserTable() {
+    const q = (document.getElementById('userSearchInput')?.value || '').toLowerCase();
+    const rows = document.querySelectorAll('.vch-user-row');
+
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        const rStatus = (row.getAttribute('data-status') || '').toUpperCase();
+
+        const matchesText = text.includes(q);
+        const isActiveOrDraft = !['SETTLED', 'CLOSED'].includes(rStatus);
+
+        if (matchesText && isActiveOrDraft) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
 }
 
 function updateInlineBadge(status, rejectedByRole = 'Accounts') {
@@ -1143,7 +1302,7 @@ function calculateFinancialTotals() {
     }
 }
 
-function setInlineEditability(isEditable, status = 'DRAFT', rejectedByRole = 'Accounts') {
+function setInlineEditability(isEditable, status = 'DRAFT', rejectedByRole = 'Accounts', rejectionReason = '', rejectedByName = '', rejectedAtStr = '', sentBackReason = '') {
     isCurrentEditable = isEditable;
 
     const quickBar = document.getElementById('quickEntryBar');
@@ -1162,6 +1321,9 @@ function setInlineEditability(isEditable, status = 'DRAFT', rejectedByRole = 'Ac
     document.getElementById('vchStartDate').disabled = !isEditable;
 
     const rejLabel = 'Rejected by ' + (rejectedByRole || 'Accounts');
+    const reasonClean = (rejectionReason || '').trim();
+    const reviewerStr = rejectedByName ? `${(rejectedByRole || 'Reviewer').toUpperCase()} (${rejectedByName})` : (rejectedByRole || 'Reviewer').toUpperCase();
+    const dateDisplay = rejectedAtStr ? `&nbsp;•&nbsp; <span>📅 ${rejectedAtStr}</span>` : '';
 
     if (!isEditable) {
         // HIDE TOP ENTRY BAR & HEADER AMOUNT INPUT WHEN SUBMITTED OR FINALIZED
@@ -1178,24 +1340,29 @@ function setInlineEditability(isEditable, status = 'DRAFT', rejectedByRole = 'Ac
 
         // 2-STAGE APPROVAL WORKFLOW STATUS DISPLAY:
         if (status === 'SUBMITTED') {
+            noticeBox.style.display = 'block';
             noticeBox.className = 'vch-badge vch-badge-submitted';
             noticeBox.innerHTML = 'STATUS: SUBMITTED &nbsp;|&nbsp; ⏳ WAITING FOR DEPARTMENT HEAD APPROVAL';
         } else if (status === 'HOD_APPROVED') {
+            noticeBox.style.display = 'block';
             noticeBox.className = 'vch-badge vch-badge-submitted';
             noticeBox.innerHTML = 'STATUS: HOD APPROVED &nbsp;|&nbsp; ⏳ WAITING FOR ACCOUNTS APPROVAL';
         } else if (status === 'APPROVED') {
+            noticeBox.style.display = 'block';
             noticeBox.className = 'vch-badge vch-badge-approved';
             noticeBox.innerHTML = 'STATUS: APPROVED BY ACCOUNTS';
         } else if (status === 'ADVANCE_ISSUED') {
+            noticeBox.style.display = 'block';
             noticeBox.className = 'vch-badge vch-badge-submitted';
             noticeBox.innerHTML = 'STATUS: TRIP ADVANCE ISSUED BY ACCOUNTS';
         } else if (status === 'SETTLED' || status === 'CLOSED') {
+            noticeBox.style.display = 'block';
             noticeBox.className = 'vch-badge vch-badge-settled';
             noticeBox.innerHTML = 'STATUS: FULLY SETTLED';
-        } else if (status === 'REJECTED') {
-            noticeBox.className = 'vch-badge vch-badge-rejected';
-            noticeBox.innerHTML = rejLabel;
+        } else if (status === 'REJECTED' || status === 'SENT_BACK') {
+            noticeBox.style.display = 'none';
         } else {
+            noticeBox.style.display = 'block';
             noticeBox.className = 'vch-badge vch-badge-draft';
             noticeBox.innerHTML = 'STATUS: READ ONLY';
         }
@@ -1213,20 +1380,15 @@ function setInlineEditability(isEditable, status = 'DRAFT', rejectedByRole = 'Ac
         document.getElementById('btnSubmitVch').style.display = 'inline-block';
         document.getElementById('thActionHeader').style.display = 'table-cell';
 
+        noticeBox.style.display = 'none';
+
         if (status === 'REJECTED') {
-            noticeBox.style.display = 'block';
-            noticeBox.className = 'vch-badge vch-badge-rejected';
-            noticeBox.innerHTML = rejLabel;
             document.getElementById('btnSubmitVch').innerText = 'RESUBMIT VOUCHER';
             document.getElementById('btnSaveDraft').style.display = 'none';
         } else if (status === 'SENT_BACK') {
-            noticeBox.style.display = 'block';
-            noticeBox.className = 'vch-badge vch-badge-sentback';
-            noticeBox.innerHTML = 'STATUS: SENT BACK BY HOD / ACCOUNTS &nbsp;|&nbsp; ✍ CHANGES REQUIRED (EDIT & RESUBMIT)';
             document.getElementById('btnSubmitVch').innerText = 'SUBMIT VOUCHER';
             document.getElementById('btnSaveDraft').style.display = 'inline-block';
         } else {
-            noticeBox.style.display = 'none';
             document.getElementById('btnSubmitVch').innerText = 'SUBMIT VOUCHER';
             document.getElementById('btnSaveDraft').style.display = 'inline-block';
         }
@@ -1256,16 +1418,22 @@ function confirmUserSubmission(actionType) {
     document.getElementById('modalTotalExp').innerText = totExp;
     document.getElementById('modalBalance').innerText = balText;
 
+    const msgSection = document.getElementById('modalUserMessageSection');
+    const msgInput = document.getElementById('modalUserMessageInput');
+
     if (actionType === 'SUBMIT') {
         modalTitle.innerText = "📋 Confirm Voucher Submission";
         modalQuestion.innerText = "Are you sure you want to submit this expense voucher to your Department Head for approval?";
         btnConfirm.innerText = "YES, SUBMIT VOUCHER";
         btnConfirm.style.background = "#003366";
+        if (msgSection) msgSection.style.display = 'block';
+        if (msgInput) msgInput.value = '';
     } else {
         modalTitle.innerText = "💾 Confirm Save Draft";
         modalQuestion.innerText = "Do you want to save this expense voucher as a draft?";
         btnConfirm.innerText = "YES, SAVE DRAFT";
         btnConfirm.style.background = "#475569";
+        if (msgSection) msgSection.style.display = 'none';
     }
 
     document.getElementById('userConfirmModalOverlay').style.display = 'flex';
@@ -1276,6 +1444,11 @@ function closeUserConfirmModal() {
 }
 
 function executeFinalFormSubmission() {
+    const userMsg = (document.getElementById('modalUserMessageInput')?.value || '').trim();
+    if (document.getElementById('vchUserMessage')) {
+        document.getElementById('vchUserMessage').value = userMsg;
+    }
+
     closeUserConfirmModal();
     document.getElementById('vchActionType').value = pendingActionType;
 
@@ -1306,12 +1479,22 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    if (userVouchersList && userVouchersList.length > 0) {
-        // Load latest voucher
-        const latest = userVouchersList[0];
-        openInlineVoucher('VIEW', latest.trip_id);
-    } else {
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewTrip = urlParams.get('view');
+    const doCreate = urlParams.get('create');
+
+    if (viewTrip) {
+        openInlineVoucher('VIEW', viewTrip);
+    } else if (doCreate) {
         openInlineVoucher('CREATE');
+    } else {
+        const container = document.getElementById('inlineVoucherContainer');
+        const listingWorkspace = document.getElementById('userListingWorkspace');
+        if (container) container.style.display = 'none';
+        if (listingWorkspace) {
+            listingWorkspace.style.display = 'block';
+            if (typeof filterUserTable === 'function') filterUserTable();
+        }
     }
 });
 </script>
